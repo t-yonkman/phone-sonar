@@ -1,0 +1,8 @@
+numpy
+scipy
+soundfile
+matplotlib
+# the CPU build is enough: pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
+# only for analysis/export.py; see the README
+# executorch==1.5.1

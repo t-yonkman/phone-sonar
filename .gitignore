@@ -1,0 +1,17 @@
+# Raw recordings are audio of the room they were made in. The echoes taken from them are in analysis/echoes.npz.
+recordings/
+
+# Fetched or generated: app/get-libs.ps1, app/build.ps1 (which also makes the throwaway signing key), app/sim/check.ps1
+app/libs/
+app/build/
+app/sim/out/
+app/debug.keystore
+.venv-executorch/
+__pycache__/
+
+# Earlier stages of the project, superseded by app/ and analysis/
+app/archive/
+cnn/
+phone_test/
+serve.py
+analysis/fish_or_bobblehead_8sets.pt
