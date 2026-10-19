@@ -1,6 +1,6 @@
 # Phone sonar
 
-An unmodified phone, a Samsung Galaxy Note10+, used as an active sonar in air. It pings above hearing from its own speakers,
+A Samsung Galaxy Note10+ used as an active sonar in air. It pings above hearing from its own speakers,
 listens with its own microphones, and a small model running on the phone says which of two objects
 is standing in front of it: a 3D-printed fish or a bobblehead.
 
