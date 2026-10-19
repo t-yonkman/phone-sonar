@@ -11,8 +11,9 @@ package dev.phonesonar;
  *    background's in the stretch just after the direct sound, where no echo can have arrived yet. This
  *    uses the pair from the speaker to the mic beside it.
  * 2. For the pair from each speaker to the mic at the far end of the phone: average the pings in fours
- *    (the phone's own sound repeats in a four-ping pattern, which cancels over one turn), slide each
- *    average, measure it against the speaker's own slid direct sound, and take the background away.
+ *    (to bring the noise down; the phone's level also repeats every four pings, which four covers, but
+ *    dividing by the direct sound already leaves less of that than the noise), slide each average,
+ *    measure it against the speaker's own slid direct sound, and take the background away.
  *    What is left is the echo.
  * 3. Express each of those two echoes in decibels along delay, with its own loudness taken out, as far
  *    as an object 10 cm away can echo and no further, and give each four-ping pair of echoes to the
