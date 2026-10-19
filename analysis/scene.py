@@ -124,8 +124,10 @@ def blocks(Q, B, names, size=4):
 
     This is exactly what the app does on the phone, in the same order, so a model trained on these is
     looking at the same thing there: find each speaker's slide from the whole recording's average ping
-    (as match does), average the pings in fours (over which the phone's four-ping pattern cancels),
-    slide each average, measure it against its own slid direct sound, and take the background away.
+    (as match does), average the pings in fours to bring the noise down, slide each average, measure it
+    against its own slid direct sound, and take the background away. The phone's level also repeats
+    every four pings, which four covers, but dividing by the direct sound already leaves less of that
+    than the noise (four_ping.py).
     -> echoes shaped (blocks, pairs, W), and the slides found
     """
     n = Q.shape[1] // size
