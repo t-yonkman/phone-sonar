@@ -7,9 +7,10 @@ baseline.
     python classify.py since 203955    train on the sets before that one, test on it and the ones after
 
 An example is the average of four consecutive pings with the object in place, minus the background of
-the same set. Four, because the phone's own sound repeats in a four-ping pattern that cancels over
-exactly one cycle. That gives about 24 examples per recording, all from the same placement, so the
-only fair test is on whole sets held out.
+the same set. Four, to bring the noise down: three to eight do as well when each set is held out, one
+or two worse (four_ping.py). The phone's level also repeats every four pings, but dividing each ping by
+its direct sound leaves less of that than the noise. That gives about 24 examples per recording, all
+from the same placement, so the only fair test is on whole sets held out.
 """
 import sys
 from pathlib import Path
@@ -51,7 +52,8 @@ def load():
     if any(FOLDER.glob("set_*.wav")):
         names, sets = read()
         E, y, g, r = examples(names, sets)
-        np.savez_compressed(ECHOES, names=names, ids=[s["id"] for s in sets], E=E.astype(np.complex64), y=y, g=g, r=r)
+        np.savez_compressed(ECHOES, names=names, ids=[s["id"] for s in sets], made=[s["made"] for s in sets],
+                            E=E.astype(np.complex64), y=y, g=g, r=r)
     d = np.load(ECHOES)
     return [str(n) for n in d["names"]], [str(i) for i in d["ids"]], d["E"], d["y"], d["g"], d["r"]
 
@@ -143,8 +145,10 @@ if __name__ == "__main__":
 
     if "since" in sys.argv:
         start = sys.argv[sys.argv.index("since") + 1]
-        train = np.isin(g, [i for i, s in enumerate(ids) if s < start])
-        print(f"\nTrained on the {len(np.unique(g[train]))} sets before {start}, tested on the {len(np.unique(g[~train]))} from it on")
+        saved = np.load(ECHOES)
+        made = [str(m) for m in saved["made"]] if "made" in saved.files else ids   # ids alone are only the time of day
+        train = np.isin(g, [i for i, m in enumerate(made) if m < made[ids.index(start)]])
+        print(f"\nTrained on the {len(np.unique(g[train]))} sets made before set {start}, tested on it and the {len(np.unique(g[~train])) - 1} made after it")
         for label, pairs, bins, mode in (ours, first):
             print(f"  {label}\n   {test(features(E[:, pairs, :bins], mode), y, g, r, ids, epochs, train)}")
     elif "grid" in sys.argv:

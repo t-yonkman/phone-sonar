@@ -17,19 +17,21 @@ OBJECTS = ("fish", "bobblehead")
 
 
 def read(folder=FOLDER):
-    """-> names of the speaker-to-mic pairs, and per set: its id, the background's average ping, the
+    """-> names of the speaker-to-mic pairs, and per set: its id (the time of day it was started), when it was
+    made (date and time, which sort in the order the sets were made), the background's average ping, the
     background's own pings, and each object's pings slid onto the background's timing (pairs, pings, W)."""
-    files, names = defaultdict(dict), None
+    files, made, names = defaultdict(dict), {}, None
     for wav in sorted(Path(folder).glob("set_*.wav")):
         _, set_id, _, label = wav.stem.split("_", 3)[0], wav.stem.split("_")[2], None, wav.stem.split("_")[-1]
         files[set_id][label] = wav
+        made[set_id] = wav.stem.split("_")[1] + "_" + set_id
     out = []
     for set_id in sorted(files):
         if not all(k in files[set_id] for k in ("background",) + OBJECTS):
             continue
         s, names, _, Q, _ = load(files[set_id]["background"])
         qb = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
-        entry = dict(id=set_id, background=qb.mean(1), background_pings=qb, settings=s, slides={})
+        entry = dict(id=set_id, made=made[set_id], background=qb.mean(1), background_pings=qb, settings=s, slides={})
         for o in OBJECTS:
             _, _, _, Q, _ = load(files[set_id][o])
             entry[o + " as recorded"] = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
