@@ -82,10 +82,12 @@ the other shortens.
 
 The model is given a fixed stretch of delay, 0.2 to 1.3 ms, so it can use where in that stretch the
 echo falls, and it does. With each set held out, and its echo moved as if the object had stood 3 cm
-closer or further, the CNN names 24 to 26 of the 30 recordings instead of 29 (`analysis/placement.py`).
+closer or further, the CNN names 40 and 31 of the 52 recordings instead of 47
+(`analysis/placement.py`). In the second field test the misses were recordings whose echo arrived
+unusually early or late (see [details.md](details.md#the-second-field-test)).
 
 The figure shows three ways to describe the echo that do not depend on when it arrived, for the bottom
-speaker to top mic path, all 15 sets, at 10 cm. Each uses only the stretch where an object can echo:
+speaker to top mic path, all 26 sets, at 10 cm. Each uses only the stretch where an object can echo:
 from 0.46 ms (the 16 cm straight across the phone, the shortest way any sound off the object can
 take) to 1.6 ms (an object about 18 cm out). In each panel the dashed line or star is what a single
 point would give: the sharpest echo this sonar can produce with its 4.5 kHz of bandwidth.
@@ -99,14 +101,15 @@ tails. The bobblehead's is flatter and runs on later.
 **(b) Compared with itself, shifted.** The autocorrelation asks how much the echo resembles itself
 shifted by a given amount: 1 with no shift, falling as the shift grows. Moving an echo in time leaves
 it unchanged, so it carries no distance at all. By a shift of 0.5 ms a single point has fallen to 0.10
-and the fish to 0.14. The bobblehead stays at 0.34, because its echo comes from parts at different
+and the fish to 0.15. The bobblehead stays at 0.30, because its echo comes from parts at different
 distances, and they keep resembling each other at shifts equal to their spacing.
 
 **(c) Two numbers.** The echo's width (its rms spread about its middle), and the share of its energy
 within 0.1 ms of its peak. A single point gives 95 µs and 0.62. The fish's examples have a median of
-105 µs and 0.51: close to a single point, one compact reflecting surface. The bobblehead's have 170 µs
-and 0.36, and vary far more. Averaged over each recording, the fish ranges from 100 to 197 µs and the
-bobblehead from 109 to 383, so no single number separates all 30 recordings.
+105 µs and 0.51: close to a single point, one compact reflecting surface. The bobblehead's have 143 µs
+and 0.38, and vary far more. Averaged over each recording, the fish ranges from 100 to 197 µs and the
+bobblehead from 109 to 383, so no single number separates all 52 recordings; the fish's echo is the
+narrower of the two in 23 of the 26 sets.
 
 What these show is how far the object's reflecting parts are spread along the path, roughly its depth
 as the sonar sees it, not its outline. The fish is close to the limit of what this sonar can resolve.
@@ -118,69 +121,70 @@ object had stood anywhere from 5 to 15 cm out.
 
 | Input | Model | Recordings right at 10 cm (examples) | Moved 5 to 15 cm |
 |---|---|---|---|
-| Fixed stretch, 0.2 to 1.3 ms (now) | CNN | 29 of 30 (96%) | 23 to 30 |
-| (a) Lined up on its middle | CNN | 25 (81%) | 23 to 27 |
-| (b) Autocorrelation, shifts 0 to 0.5 ms | CNN | 29 (88%) | 24 to 29 |
-| (c) Shape statistics, 8 numbers | Logistic regression | 26 (87%) | 26 to 28 |
+| Fixed stretch, 0.2 to 1.3 ms (now) | CNN | 47 of 52 (89%) | 25 to 50 |
+| (a) Lined up on its middle | CNN | 44 (82%) | 42 to 47 |
+| (b) Autocorrelation, shifts 0 to 0.5 ms | CNN | 47 (82%) | 42 to 47 |
+| (c) Shape statistics, 8 numbers | Logistic regression | 46 (83%) | 44 to 49 |
+| (c) Shape statistics, 8 numbers | Nearest class mean | 48 (86%) | 42 to 48 |
 
 The shape statistics are four per path: the width, the share near the peak, how far the peak stands
 above the average, and how soon the autocorrelation falls to a half.
 
-- **Lining up did worse.** Probably because finding the middle is noisy, and because the window around
-  the bobblehead's later middle reaches to about 1.5 ms: the stretch where changes elsewhere in the
-  room caused two of the first phone model's three wrong guesses.
-- **The autocorrelation** names as many recordings at 10 cm as the input used now, and more of them
-  once the object is 3 cm or more off. Single 0.4 s examples are right less often (88% against 96%); the average over a
-  recording's 25 or so hides that.
-- **The statistics** are the steadiest across distance and the easiest to read, at some cost at 10 cm.
+- **All three hold up far better than the current input once the object moves**, which falls to
+  chance by 14 cm. At 10 cm they name 44 to 48 recordings against its 47.
+- **Lining up is the weakest at 10 cm.** Probably because finding the middle is noisy, and because the
+  window around the bobblehead's later middle reaches to about 1.5 ms: the stretch where changes
+  elsewhere in the room caused two of the first phone model's three wrong guesses.
+- **The autocorrelation** names as many recordings at 10 cm as the current input, but single 0.4 s
+  examples are right less often (82% against 89%); the average over a recording's 24 or so hides that.
+- **The statistics** are the steadiest across distance and the easiest to read, at no clear cost at
+  10 cm: 46 of 52 with logistic regression and 48 with a class mean.
 
-**The catch.** At the same nominal 10 cm, the fish's echo middle is at 0.81 ms and the bobblehead's at
-0.98 ms. Part of that 0.17 ms may be shape: parts of the bobblehead, such as its head, on longer paths.
+**The catch.** At the same nominal 10 cm, the fish's echo middle is at 0.83 ms and the bobblehead's at
+0.96 ms. Part of that 0.13 ms may be shape: parts of the bobblehead, such as its head, on longer paths.
 Part may be where each tended to be put down. The input used now can use both; the descriptions above
-give up both, which is why they score lower at 10 cm. Only recordings at measured distances can tell
-the two apart.
+give up both. Only recordings at measured distances can tell the two apart.
 
 **What the test cannot show.** Moving the recorded echoes imitates the change in delay and strength
 only, which is exactly what these descriptions ignore, so their staying level is expected. What slope
-remains most likely comes from the edges of the stretch: closer than about 7 cm the echo runs into what is left of
-the phone's own sound just after the direct arrival, and past about 13 cm the bobblehead's echo runs
-out of the 1.6 ms window. A real move also changes the angle each end of the phone sees the object
-from, 49° off the phone's face at 7 cm against 32° at 13 cm, and no recording here shows what that
-does. With 30 recordings, a difference of one or two is within chance. The next sets worth recording
-are at measured distances, such as 7, 10 and 13 cm from a marked spot.
+remains most likely comes from the edges of the stretch: closer than about 7 cm the echo runs into what
+is left of the phone's own sound just after the direct arrival, and past about 13 cm the bobblehead's
+echo runs out of the 1.6 ms window. A real move also changes the angle each end of the phone sees the
+object from, 49° off the phone's face at 7 cm against 32° at 13 cm, and no recording here shows what
+that does. With 52 recordings, a difference of one or two is within chance. The next sets worth
+recording are at measured distances, such as 7, 10 and 13 cm from a marked spot.
 
 ## 3. The four-ping pattern, and why pings are averaged in fours
 
 ![The pattern ping by ping, what it leaves, and accuracy against the number of pings averaged](four_ping.png)
 
-Each speaker's sound comes out of the phone a little differently on every fourth ping, in all 45
+Each speaker's sound comes out of the phone a little differently on every fourth ping, in all 78
 recordings (`analysis/four_ping.py`).
 
 **(a) What it is.** Measured at the mic beside each speaker, the level steps through four values and
-repeats: 1.6 to 1.7% rms, 4.2 to 4.4% from peak to trough, and anywhere from 0.3 to 6.6% between
-recordings. With the pattern taken out, the level varies by only 0.4 to 0.5% from one ping to the
-next. The ping's arrival moves with it, by 0.05 to 0.06 of a sample (about 1 µs) from earliest to
+repeats: 1.9 to 2.0% rms, 4.7 to 5.0% from peak to trough, and anywhere from 0.2 to 8.3% between
+recordings. With the pattern taken out, the level varies by only about 0.4% from one ping to the
+next. The ping's arrival moves with it, by about 0.06 of a sample (about 1.2 µs) from earliest to
 latest, against about 0.01 of a sample from ping to ping. Level and timing move together (correlation
-0.98 for the bottom speaker, −0.92 for the top), as they would if the phone's audio output were
+0.96 for the bottom speaker, −0.92 for the top), as they would if the phone's audio output were
 placing each ping a slightly different fraction of a sample late on a four-ping cycle. That cause is a
 guess; the measurement is not.
 
-The earlier README's "about 1.5%" was the rms. The "±2.5%" read off one recording earlier is half its peak to
-trough. Both describe the same pattern.
+The earlier README's "about 1.5%" was this rms, as it stood on the first sets. The "±2.5%" read off one
+recording earlier is half its peak to trough. Both describe the same pattern.
 
 **(b) What it leaves.** Dividing each ping by its own direct sound takes out a change of level but not
 a change of timing, so some of the pattern could survive into what the model is given. It does not, in
 any amount that can be measured. On the empty scenes, what is left on the crossing paths over the
-model's window falls with the number of pings averaged exactly as noise alone would: −58.1 dB for one
-ping, −64.2 dB for four, against −58.0 and −64.0 for noise. Averaging three or five pings, which do not
+model's window falls with the number of pings averaged exactly as noise alone would: −57.7 dB for one
+ping, −63.7 dB for four, against −57.6 and −63.6 for noise. Averaging three or five pings, which do not
 cover the pattern, leaves no more than averaging four. Lining each ping up on its own before averaging
 changes nothing.
 
-**(c) What it means for the model.** With each set held out, three to eight pings per example do equally
-well (CNN 29 or 30 recordings of 30, 96 to 97% of examples); one or two pings do worse per example (89
-to 92%), as more noise would predict. Lining each ping up first does not help. The differences between
-three, four and eight are within chance.
+**(c) What it means for the model.** With each set held out, one to eight pings per example do about
+equally well (CNN 46 to 48 recordings of 52, 85 to 90% of examples). Lining each ping up first does not
+help. The differences are within chance.
 
-So the reason the README used to give for averaging in fours, that it cancels the pattern, is not the reason it
-works: four works because it brings the noise down. The model is unchanged, and the explanation in
-`scene.py`, `classify.py` and `Judge.java` now says so.
+So the reason the README used to give for averaging in fours, that it cancels the pattern, is not the
+reason it works: four brings the noise down, though at this sample size accuracy barely depends on
+it. The explanation in `scene.py`, `classify.py` and `Judge.java` now says so.

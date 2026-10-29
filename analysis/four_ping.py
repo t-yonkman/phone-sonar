@@ -134,7 +134,7 @@ if __name__ == "__main__":
     noise1 = rest["each ping lined up"][0]
     print("  noise alone would be" + "".join(f"{noise1 - 10 * np.log10(b):7.1f}" for b in sizes) + "   (one lined-up ping, divided by the number averaged)")
 
-    print("\n3. Each set held out in turn: recordings right of 30, share of examples right, average P(the right object)")
+    print("\n3. Each set held out in turn: recordings right, share of examples right, average P(the right object)")
     pairs = cross(names)
     configs = [("as now", 4), ("as now", 1), ("as now", 2), ("as now", 3), ("as now", 8),
                ("each ping lined up", 1), ("each ping lined up", 2), ("each ping lined up", 4), ("each ping lined up", 8)]
