@@ -4,7 +4,7 @@ A Samsung Galaxy Note10+ used as an active sonar in air. It pings above hearing 
 listens with its own microphones, and a small model running on the phone says which of two objects
 is standing in front of it: a 3D-printed fish or a bobblehead.
 
-![The setup from above and from the side: the phone on its stand, its speakers and mics, and the fish in front](docs/figures/0_setup.png)
+![The setup from above and from the side: the phone on its stand, its speakers and mics, and the object in front](docs/figures/0_setup.png)
 
 It is a deliberately small version of the problem a handheld search sonar solves: say what a target
 is from its echo, on the device, from data collected in the field. Most of the work went into
@@ -94,8 +94,8 @@ two crossing paths, and the app averages over the recording. On the phone it run
 
 ## Limits
 
-This exercises a search sonar's pipeline, not its physics. Beyond hard targets in air (above): there is
-no beam, so every direction lands in one echo; a real search has no empty scene to subtract; and it
+What carries over to a search sonar is the processing, not the physics. Besides hard targets in air
+(above): there is no beam, so every direction lands in one echo; a real search has no empty scene to subtract; and it
 listens while it transmits, which only a separate speaker and mic allow.
 
 ## More
