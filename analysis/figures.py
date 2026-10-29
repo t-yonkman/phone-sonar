@@ -1,5 +1,6 @@
 """The figures for the write-up (docs/writeup.md), written to docs/figures/.    python figures.py
 
+0_setup.png                the phone on its stand, its speakers and mics, the object, and the paths the model uses
 1_what_the_mics_hear.png   one cycle of a background recording as the two mics recorded it, and its spectrogram
 2_every_cycle.png          every cycle of the empty scene, the fish and the bobblehead from one set
 3_echo_shape.png           three ways to describe the object's echo that do not depend on when it arrived
@@ -29,6 +30,94 @@ def save(fig, name):
     fig.savefig(OUT / name, dpi=120)
     plt.close(fig)
     print("wrote", OUT / name)
+
+
+def setup():
+    """A schematic of the setup, in centimetres: from above, then from the side."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Polygon
+    from steps import GREEN, GRID, PURPLE
+    CASE, BODY = "#dcdad2", "#3b3a37"
+    fig, ax = plt.subplots(1, 2, figsize=(15, 5.6), gridspec_kw={"width_ratios": [1.45, 1]})
+
+    def arrow(a, p, q, col, lw, ls="-", head=True):
+        a.add_patch(FancyArrowPatch(p, q, arrowstyle="-|>" if head else "-", mutation_scale=12, color=col, lw=lw, ls=ls,
+                                    shrinkA=0, shrinkB=0))
+
+    def span(a, p, q, text, off, rot=0):
+        a.add_patch(FancyArrowPatch(p, q, arrowstyle="<|-|>", mutation_scale=10, color=INK2, lw=1))
+        a.text((p[0] + q[0]) / 2 + off[0], (p[1] + q[1]) / 2 + off[1], text, ha="center", va="center", fontsize=10,
+               color=INK2, rotation=rot)
+
+    def fish(a, cx, cy, length, height):
+        """A fish facing left (towards the phone), centred on (cx, cy)."""
+        from matplotlib.patches import Circle, Ellipse
+        tail = [(cx + 0.28 * length, cy), (cx + 0.52 * length, cy + 0.45 * height), (cx + 0.52 * length, cy - 0.45 * height)]
+        a.add_patch(Polygon(tail, closed=True, fc=BLUE + "55", ec=BLUE, lw=1.3, zorder=3))
+        a.add_patch(Ellipse((cx - 0.08 * length, cy), 0.80 * length, height, fc=BLUE + "33", ec=BLUE, lw=1.3, zorder=4))
+        a.add_patch(Circle((cx - 0.32 * length, cy + 0.12 * height), 0.06 * height, fc=BLUE, ec="none", zorder=5))
+
+    # a: from above. The phone lies along x with its back (y = 0) towards the fish at y = 10, its screen away.
+    a = ax[0]
+    a.add_patch(Polygon([(-3, 0.45), (3, 0.45), (2.4, 2.25), (-2.4, 2.25)], closed=True, fc="none", ec=AXIS, hatch="///", lw=1))
+    a.text(0, 1.35, "kickstand", ha="center", va="center", fontsize=9, color=MUTED,
+           bbox=dict(fc=steps.SURFACE, ec="none", pad=1.5))
+    a.add_patch(FancyBboxPatch((-8.6, -1.45), 17.2, 1.9, boxstyle="round,pad=0,rounding_size=0.45", fc=CASE, ec=AXIS, lw=1))
+    a.add_patch(FancyBboxPatch((-8.1, -1.05), 16.2, 1.05, boxstyle="round,pad=0,rounding_size=0.3", fc=BODY, ec=BODY))
+    a.text(0, -0.52, "Galaxy Note10+, back towards the fish", ha="center", va="center", fontsize=8.5, color="white")
+    a.plot([-7.6, 7.6], [-1.12, -1.12], color=BLUE, lw=2.2, solid_capstyle="round")
+    a.text(0, -1.75, "screen, facing away", ha="center", va="top", fontsize=9, color=BLUE)
+    loud, ear, top_mic, bottom_mic = (8.1, -0.75), (-7.4, -1.12), (-8.1, -0.3), (8.1, -0.25)
+    for p in (loud, ear):
+        a.plot(*p, marker="s", ms=8, color=INK, mec="white", mew=1, zorder=6)
+    for p in (top_mic, bottom_mic):
+        a.plot(*p, marker="o", ms=7, color="white", mec=INK, mew=1.6, zorder=6)
+    a.text(-9.0, -0.4, "top end\nearpiece speaker  ■\ntop mic  ○", ha="right", va="center", fontsize=9.5, color=INK, linespacing=1.5)
+    a.text(9.0, -0.4, "bottom end\n■  loudspeaker\n○  bottom mic", ha="left", va="center", fontsize=9.5, color=INK, linespacing=1.5)
+    fish(a, 0, 10.2, 5.2, 2.2)
+    a.text(0, 11.7, "the fish (or the bobblehead), midway between the ends", ha="center", va="bottom", fontsize=9, color=INK2)
+    hit_a, hit_b = (1.1, 9.2), (-1.1, 9.2)
+    arrow(a, loud, hit_a, PURPLE, 2.6, head=False)
+    arrow(a, hit_a, top_mic, PURPLE, 2.6)
+    arrow(a, ear, hit_b, GREEN, 1.3, ls=(0, (4, 2)), head=False)
+    arrow(a, hit_b, bottom_mic, GREEN, 1.3, ls=(0, (4, 2)))
+    arrow(a, (7.6, 2.9), (-7.6, 2.9), MUTED, 1, ls=(0, (1, 2)))
+    span(a, (-8.1, -5.0), (8.1, -5.0), "16 cm between the ends", (0, -0.6))
+    span(a, (12.6, 0), (12.6, 10.2), "10 cm", (0.7, 0), rot=90)
+    a.plot([], [], color=PURPLE, lw=2.6, label="loudspeaker to the top mic, by way of the fish: the path that does most of the work")
+    a.plot([], [], color=GREEN, lw=1.3, ls=(0, (4, 2)), label="earpiece to the bottom mic, by way of the fish: much weaker")
+    a.plot([], [], color=MUTED, lw=1, ls=(0, (1, 2)), label="the ping straight across the phone, which the echo must be told from")
+    a.legend(loc="upper left", bbox_to_anchor=(0.0, 1.0), fontsize=8.5)
+    a.set(xlim=(-16.5, 16.5), ylim=(-6.6, 16.5), aspect="equal", title="a  From above", anchor="N")
+    a.axis("off")
+
+    # b: from the side. The phone stands on its long edge with its back towards the fish, leaning on the kickstand.
+    a = ax[1]
+    th, t, h = np.radians(14), 1.3, 8.2                      # lean, thickness with the case, height (the phone's width)
+    n, up = np.array([np.cos(th), -np.sin(th)]), np.array([np.sin(th), np.cos(th)])   # screen to back; bottom to top
+    Bk = np.array([0.0, 0.0])                                # the bottom of the back, on the ground
+    Sb = Bk - t * n                                          # the bottom of the screen side
+    a.plot([-6, 14.5], [0, 0], color=AXIS, lw=1.5)
+    P = Bk + 0.45 * h * up
+    a.plot([P[0], P[0] + 2.7], [P[1], 0], color="#a9a69b", lw=4, solid_capstyle="round")
+    a.text(P[0] + 2.0, 2.6, "kickstand", ha="left", fontsize=9, color=MUTED)
+    a.add_patch(Polygon([Sb, Bk, Bk + h * up, Sb + h * up], closed=True, fc=CASE, ec=AXIS, lw=1))
+    inner = [Sb + 0.25 * t * n + 0.25 * up, Sb + 0.75 * t * n + 0.25 * up, Sb + 0.75 * t * n + (h - 0.25) * up,
+             Sb + 0.25 * t * n + (h - 0.25) * up]
+    a.add_patch(Polygon(inner, closed=True, fc=BODY, ec=BODY))
+    s0, s1 = Sb + 0.4 * up, Sb + (h - 0.4) * up
+    a.plot([s0[0], s1[0]], [s0[1], s1[1]], color=BLUE, lw=2.5)
+    mid = (s0 + s1) / 2
+    a.text(mid[0] - 0.55, mid[1], "screen", ha="center", va="center", fontsize=9, color=BLUE, rotation=90 - np.degrees(th))
+    fish(a, 10.4, 1.8, 5.0, 3.0)
+    a.text(10.4, 3.7, "fish", ha="center", va="bottom", fontsize=10, color=INK)
+    span(a, (0.0, -1.1), (10.4, -1.1), "10 cm", (0, -0.6))
+    a.text(15, 9.6, "On its long edge in a Spigen case,\nback towards the fish, leaning on\nthe kickstand. The speakers and mics\nare at the two ends, in and out of the page.",
+           ha="right", va="top", fontsize=9, color=INK2, linespacing=1.4)
+    a.set(xlim=(-7, 15), ylim=(-2.8, 10), aspect="equal", title="b  From the side", anchor="N")
+    a.axis("off")
+    fig.text(0.99, 0.01, "schematic: sizes and positions approximate", ha="right", fontsize=8.5, color=MUTED, style="italic")
+    fig.tight_layout(rect=(0, 0.02, 1, 1))
+    save(fig, "0_setup.png")
 
 
 def what_the_mics_hear():
@@ -197,7 +286,7 @@ def echo_shape():
         k = int(np.argmax(curve < 0.5))
         return 1000 * (k - 1 + (curve[k - 1] - 0.5) / (curve[k - 1] - curve[k])) / 48
 
-    print("figure 3: bottom spk > top mic, all 15 sets at 10 cm")
+    print(f"figure 3: bottom spk > top mic, all {len(ids)} sets at 10 cm")
     print(f"  single point: width {1000 * Sp[0, 0]:.0f} us, share within 0.1 ms of peak {Sp[0, 2]:.2f}, autocorrelation half at {half(Rp[0, 0]):.0f} us, at 0.5 ms {Rp[0, 0, -1]:.2f}")
     for j, o in enumerate(OBJECTS):
         rec = [S[r == k, 0].mean() * 1000 for k in np.unique(r[y == j])]
@@ -246,7 +335,7 @@ def echo_shape():
     a.set(title="c  Two numbers that describe its shape", xlabel="echo width: rms about its middle, µs",
           ylabel="share of its energy within 0.1 ms of its peak")
     a.legend(loc="upper right", fontsize=8.5)
-    fig.text(0.99, 0.005, "bottom speaker > top mic; the real echoes of all 15 sets at 10 cm; lines are medians, bands the 15th to 85th percentile "
+    fig.text(0.99, 0.005, f"bottom speaker > top mic; the real echoes of all {len(ids)} sets at 10 cm; lines are medians, bands the 15th to 85th percentile "
              "of the 0.4 s examples; the dashed line and star are what a single point would give",
              ha="right", fontsize=8.5, color=MUTED, style="italic")
     fig.tight_layout(rect=(0, 0.025, 1, 1))

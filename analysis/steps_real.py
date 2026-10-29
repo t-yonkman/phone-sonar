@@ -148,7 +148,7 @@ def echoes(names, sets, new):
     ax[0].set_ylabel("added by the object, dB relative to the direct sound")
     for o in OBJECTS:
         ax[1].plot([], [], color=COLOUR[o], lw=1, label=f"{o}, one line per set")
-        ax[1].plot([], [], color=COLOUR[o], lw=2.2, ls=(0, (4, 1.5)), label=f"{o}, set {', '.join(new)} (new)")
+        ax[1].plot([], [], color=COLOUR[o], lw=2.2, ls=(0, (4, 1.5)), label=f"{o}, the {len(new)} sets the saved model was not trained on")
     ax[1].legend(loc="upper right", fontsize=8.5)
     fig.suptitle("8-9  What each object added to its own background; between the dashed lines is what the network sees",
                  x=0.01, ha="left", fontsize=11, fontweight="bold")
@@ -184,14 +184,15 @@ def guesses(names, sets, new):
     first_new = [i for i, s in enumerate(sets) if s["id"] in new]
     for i in first_new:
         ax.axvspan(i - 0.5, i + 0.5, color=GREEN, alpha=0.1, lw=0)
-        ax.text(i, 1.06, "new: not in\nthe training data", ha="center", fontsize=8.5, color=GREEN)
-    ax.set_xticks(range(n), [s["id"][-4:] for s in sets], fontsize=8.5)
+    if first_new:
+        ax.text((first_new[0] + first_new[-1]) / 2, 1.06, "not in the saved model's training data", ha="center", fontsize=8.5, color=GREEN)
+    ax.set_xticks(range(n), [s["id"][-4:] for s in sets], fontsize=7.5, rotation=90)
     ax.set(xlim=(-0.6, n - 0.4), ylim=(-0.04, 1.14), ylabel="P(fish)", xlabel="set")
-    ax.scatter([], [], marker="D", facecolor="none", edgecolor=INK2, label="phone's answer at the time (earlier model, installed 2026-10-12 20:36), right")
-    ax.scatter([], [], marker="D", facecolor="#d03030", edgecolor=INK2, label="phone's answer at the time (earlier model), wrong")
-    ax.plot([], [], color=INK2, lw=2.4, label="current model in the repo, run on the PC (faded: set was in its training data)")
+    ax.scatter([], [], marker="D", facecolor="none", edgecolor=INK2, label="the phone's answer at the time, from the model then on it: right")
+    ax.scatter([], [], marker="D", facecolor="#d03030", edgecolor=INK2, label="the phone's answer at the time: wrong")
+    ax.plot([], [], color=INK2, lw=2.4, label=f"the saved model, trained on {len(ck['sets'])} sets, run on the PC (faded: set in its training data)")
     ax.legend(loc="center left", fontsize=8.5, bbox_to_anchor=(0, 0.62))
-    ax.set_title("11  Every recording: what the phone said, and what the current model says now")
+    ax.set_title("11  Every recording: what the phone said at the time, and what the saved model says on the PC")
     fig.tight_layout()
     save(fig, "11_guesses.png")
     for sid, o, pc, phone in rows:
@@ -204,11 +205,12 @@ if __name__ == "__main__":
     names, sets = read()
     ids = [s["id"] for s in sets]
     # the folder name gives only the time of day; put the sets in the order they were made
-    order = sorted(range(len(sets)), key=lambda i: next(FOLDER.glob(f"set_*_{ids[i]}_1_background.wav")).stem.split("_")[1] + ids[i])
-    sets = [sets[i] for i in order]
-    new = [s["id"] for s in sets if next(FOLDER.glob(f"set_*_{s['id']}_1_background.wav")).stem.split("_")[1] > "20261012"]
+    sets = sorted(sets, key=lambda s: s["made"])
+    # "new": the sets the saved model (fish_or_bobblehead.pt) was not trained on
+    trained_on = torch.load(steps.Path(__file__).parent / "fish_or_bobblehead.pt", weights_only=False)["sets"]
+    new = [s["id"] for s in sets if s["id"] not in trained_on]
     show = sys.argv[1] if len(sys.argv) > 1 else sets[0]["id"]
-    print(f"{len(sets)} sets; showing the steps on {show}; new since the model: {new}")
+    print(f"{len(sets)} sets; showing the steps on {show}; not in the saved model's training data: {new}")
     raw(show)
     names, direct = profiles(show)
     four_ping(direct, show)
