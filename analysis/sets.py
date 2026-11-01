@@ -1,7 +1,22 @@
-"""Sets of three recordings (background, fish, bobblehead): what each object adds to its own background,
-and a picture of it. Also the starting point for classify.py.
+"""Sets of recordings: what each object adds to its own background, and a picture of it. Also the starting
+point for classify.py.
 
     python sets.py [folder of set_*.wav] [picture to write]
+
+A recording is a WAV with one channel per mic and a .json beside it saying how it was made, named
+
+    set_<date>_<time>_<place in the set>_<label>.wav
+
+<date>_<time> is the set's id. Labels are background, fish, bobblehead and empty, a sham trial in which
+hands reach in and nothing is left. A set needs the first three; the empty trial is optional. Recordings
+made to a run sheet also have, in the .json:
+
+    block          the run of sets made in one spot
+    distance_cm    from the back of the case to the centre of the object's base
+    sideways_cm    from the middle of the phone to that centre, positive towards the bottom speaker
+
+and may have a photo beside them, <the same name>.jpg. Older recordings have none of these. Their distance
+is not known: "10 cm" was never measured from a fixed point.
 """
 import sys
 from collections import defaultdict
@@ -17,25 +32,31 @@ OBJECTS = ("fish", "bobblehead")
 
 
 def read(folder=FOLDER):
-    """-> names of the speaker-to-mic pairs, and per set: its id (the time of day it was started), when it was
-    made (date and time, which sort in the order the sets were made), the background's average ping, the
-    background's own pings, and each object's pings slid onto the background's timing (pairs, pings, W)."""
-    files, made, names = defaultdict(dict), {}, None
+    """-> names of the speaker-to-mic pairs, and per set: its id (date and time), its block, the background's
+    average ping, the background's own pings, each object's pings slid onto the background's timing (pairs,
+    pings, W), where each object stood (NaN if not measured), and an empty trial's pings if it has one."""
+    files, names = defaultdict(dict), None
     for wav in sorted(Path(folder).glob("set_*.wav")):
-        _, set_id, _, label = wav.stem.split("_", 3)[0], wav.stem.split("_")[2], None, wav.stem.split("_")[-1]
-        files[set_id][label] = wav
-        made[set_id] = wav.stem.split("_")[1] + "_" + set_id
+        part = wav.stem.split("_")
+        files[f"{part[1]}_{part[2]}"][part[-1]] = wav
     out = []
-    for set_id in sorted(files):
+    # In order of time of day, not of date: the order the examples are trained in, kept so that a change here
+    # does not change the model. Sets made on different days sort among each other, which matters to nothing else.
+    for set_id in sorted(files, key=lambda i: i.split("_")[1]):
         if not all(k in files[set_id] for k in ("background",) + OBJECTS):
             continue
         s, names, _, Q, _ = load(files[set_id]["background"])
         qb = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
-        entry = dict(id=set_id, made=made[set_id], background=qb.mean(1), background_pings=qb, settings=s, slides={})
+        entry = dict(id=set_id, block=s.get("block", ""), background=qb.mean(1), background_pings=qb, settings=s,
+                     slides={}, distance={}, sideways={})
         for o in OBJECTS:
-            _, _, _, Q, _ = load(files[set_id][o])
+            m, _, _, Q, _ = load(files[set_id][o])
             entry[o + " as recorded"] = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
             entry[o], entry["slides"][o] = match(entry[o + " as recorded"], entry["background"], names)
+            entry["distance"][o], entry["sideways"][o] = m.get("distance_cm", np.nan), m.get("sideways_cm", np.nan)
+        if "empty" in files[set_id]:
+            _, _, _, Q, _ = load(files[set_id]["empty"])
+            entry["empty as recorded"] = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
         out.append(entry)
     return names, out
 

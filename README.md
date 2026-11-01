@@ -108,6 +108,6 @@ rerun the tests from the extracted echoes (the raw audio is not included):
 ```
 pip install -r requirements.txt
 cd analysis
-python classify.py                  # each set held out in turn
-python classify.py since 195308     # trained on the 15 sets up to 13 October, tested on the 11 from 27 October
+python classify.py                          # each set held out in turn
+python classify.py since 20261027_195308     # trained on the 15 sets up to 13 October, tested on the 11 from 27 October
 ```

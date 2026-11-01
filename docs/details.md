@@ -310,9 +310,9 @@ chain extracts from them, enough to rerun everything from the model input on:
 ```
 pip install -r requirements.txt
 cd analysis
-python classify.py                  # each set held out in turn; saves the model trained on every set
-python classify.py since 195308     # trained on the 15 sets up to 13 October, tested on the 11 from 27 October
-python classify.py grid             # every window, path and loudness choice that was compared (slow)
+python classify.py                          # each set held out in turn; saves the model trained on every set
+python classify.py since 20261027_195308     # trained on the 15 sets up to 13 October, tested on the 11 from 27 October
+python classify.py grid                     # every window, path and loudness choice that was compared (slow)
 ```
 
 `sets.py`, `control.py`, `placement.py`, `shape.py`, `four_ping.py`, `figures.py` and

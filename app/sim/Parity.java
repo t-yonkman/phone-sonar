@@ -75,12 +75,12 @@ public class Parity {
             String[] part = f.getName().replace(".wav", "").split("_");
             String label = part[part.length - 1];
             int which = label.equals("background") ? 0 : label.equals("fish") ? 1 : label.equals("bobblehead") ? 2 : -1;
-            if (which >= 0) found.computeIfAbsent(part[2], k -> new File[3])[which] = f;
+            if (which >= 0) found.computeIfAbsent(part[1] + "_" + part[2], k -> new File[3])[which] = f;
         }
         int right = 0, total = 0;
         double worst = 0;
         long spent = 0;
-        System.out.println("set     object      app P(fish)  PC P(fish)   app says    slides (samples)   echo dB  examples");
+        System.out.println("set              object      app P(fish)  PC P(fish)   app says    slides (samples)   echo dB  examples");
         for (Map.Entry<String, File[]> e : found.entrySet()) {
             File[] f = e.getValue();
             if (f[0] == null) continue;

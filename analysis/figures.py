@@ -23,7 +23,7 @@ from shape import AROUND, LAGS, REF, aligned, autocorr, middles, stats
 from steps import AXIS, BLUE, COLOUR, INK, INK2, MUTED, ORANGE
 
 OUT = Path(__file__).parent.parent / "docs" / "figures"
-SHOWN = "185816"   # the set whose background figure 1 shows
+SHOWN = "20261012_185816"   # the set whose background figure 1 shows
 
 
 def save(fig, name):
@@ -118,7 +118,7 @@ def setup():
 
 
 def what_the_mics_hear():
-    path = next(FOLDER.glob(f"set_*_{SHOWN}_1_background.wav"))
+    path = next(FOLDER.glob(f"set_{SHOWN}_1_background.wav"))
     s = json.loads(path.with_suffix(".json").read_text())
     x, fs = sf.read(str(path), always_2d=True)          # channel 0 the top mic, channel 1 the bottom mic
     up, _ = steps.chirp(True)
@@ -193,7 +193,7 @@ BAND = signal.butter(6, [17000, 23500], btype="bandpass", fs=48000, output="sos"
 def cycles(label, band=False):
     """Every whole 100 ms cycle of one of SHOWN's recordings, each starting 2 ms before the bottom speaker's ping
     reaches the bottom mic: (cycles, 4800, mics). With band, only 17 to 23.5 kHz is kept, before cutting."""
-    path = next(FOLDER.glob(f"set_*_{SHOWN}_*_{label}.wav"))
+    path = next(FOLDER.glob(f"set_{SHOWN}_*_{label}.wav"))
     x, fs = sf.read(str(path), always_2d=True)
     up, _ = steps.chirp(True)
     m = np.abs(signal.correlate(x[fs:fs + 2 * 4800, 1], up, mode="valid"))

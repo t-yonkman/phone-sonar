@@ -4,7 +4,7 @@ baseline.
     python classify.py                 each set held out in turn, for what the phone is given and for what it
                                        was first given; then save the phone's model trained on every set
     python classify.py grid            the same test over every choice of window, pairs and loudness removal
-    python classify.py since 203955    train on the sets before that one, test on it and the ones after
+    python classify.py since 20261027_195308    train on the sets made before that one, test on it and the later ones
 
 An example is the average of four consecutive pings with the object in place, minus the background of
 the same set. Four, to bring the noise down: three to eight do as well when each set is held out, one
@@ -33,27 +33,43 @@ ECHOES = Path(__file__).parent / "echoes.npz"
 
 
 def examples(names, sets):
-    """-> complex echoes (n, pairs, HI - LO), object index, set index, recording index"""
-    E, y, g, r = [], [], [], []
+    """-> complex echoes (n, pairs, HI - LO), object index, set index, recording index, distance in cm (NaN where
+    it was not measured)"""
+    E, y, g, r, d = [], [], [], [], []
     for i, s in enumerate(sets):
         for j, o in enumerate(OBJECTS):
             e, _ = blocks(s[o + " as recorded"], s["background"], names)
             E.append(e[:, :, LO:HI])
-            y += [j] * len(e); g += [i] * len(e); r += [2 * i + j] * len(e)
-    return np.concatenate(E), np.array(y), np.array(g), np.array(r)
+            y += [j] * len(e); g += [i] * len(e); r += [2 * i + j] * len(e); d += [s["distance"][o]] * len(e)
+    return np.concatenate(E), np.array(y), np.array(g), np.array(r), np.array(d, float)
+
+
+def shams(names, sets):
+    """-> the echoes of the empty trials (n, pairs, HI - LO), and the set index of each: what is left when hands
+    reach in and nothing stays"""
+    E, g = [np.empty((0, len(names), HI - LO), complex)], []
+    for i, s in enumerate(sets):
+        if "empty as recorded" in s:
+            e, _ = blocks(s["empty as recorded"], s["background"], names)
+            E.append(e[:, :, LO:HI])
+            g += [i] * len(e)
+    return np.concatenate(E), np.array(g, int)
 
 
 def load():
-    """-> pair names, set ids, and what examples() gives for every set.
+    """-> pair names, set ids, and the echoes, object, set and recording of every example.
 
     The raw recordings are room audio and are not kept in the repository; the echoes taken from them are, in
-    echoes.npz. Where the recordings are present the echoes are taken afresh and that file rewritten.
+    echoes.npz. Where the recordings are present the echoes are taken afresh and that file rewritten. The file
+    also holds each set's block, each example's distance, and the empty trials' echoes and sets.
     """
     if any(FOLDER.glob("set_*.wav")):
         names, sets = read()
-        E, y, g, r = examples(names, sets)
-        np.savez_compressed(ECHOES, names=names, ids=[s["id"] for s in sets], made=[s["made"] for s in sets],
-                            E=E.astype(np.complex64), y=y, g=g, r=r)
+        E, y, g, r, distance = examples(names, sets)
+        empty_E, empty_g = shams(names, sets)
+        np.savez_compressed(ECHOES, names=names, ids=[s["id"] for s in sets], block=[s["block"] for s in sets],
+                            E=E.astype(np.complex64), y=y, g=g, r=r, distance=distance.astype(np.float32),
+                            empty_E=empty_E.astype(np.complex64), empty_g=empty_g)
     d = np.load(ECHOES)
     return [str(n) for n in d["names"]], [str(i) for i in d["ids"]], d["E"], d["y"], d["g"], d["r"]
 
@@ -145,9 +161,7 @@ if __name__ == "__main__":
 
     if "since" in sys.argv:
         start = sys.argv[sys.argv.index("since") + 1]
-        saved = np.load(ECHOES)
-        made = [str(m) for m in saved["made"]] if "made" in saved.files else ids   # ids alone are only the time of day
-        train = np.isin(g, [i for i, m in enumerate(made) if m < made[ids.index(start)]])
+        train = np.isin(g, [i for i, s in enumerate(ids) if s < start])
         print(f"\nTrained on the {len(np.unique(g[train]))} sets made before set {start}, tested on it and the {len(np.unique(g[~train])) - 1} made after it")
         for label, pairs, bins, mode in (ours, first):
             print(f"  {label}\n   {test(features(E[:, pairs, :bins], mode), y, g, r, ids, epochs, train)}")
