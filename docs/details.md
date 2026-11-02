@@ -175,13 +175,35 @@ block D was opened: nothing is retrained afterwards, every recording stays in, a
 result. Block D has 14 object recordings and 1 empty trial, so even 14 of 14 would only show accuracy above about
 77%. A dry run on block C scored 12 of 14 on distance, one short of the mark, on a block the line was fitted to.
 
-| Test | Pass mark | Result |
-|---|---|---|
-| Named at 10 s | 12 of 14 | __ |
-| Within 2 cm | 13 of 14 | __ |
-| Objects found, empty trial rejected | 13 of 14, and rejected | __ |
-| Same answer at 2.8 s as at 10 s | 13 of 14 | __ |
-| App matches Python | Same answers, gaps as on blocks A to C | __ |
+| Test | Pass mark | Result | |
+|---|---|---|---|
+| Named at 10 s | 12 of 14 | 14 of 14 | Pass |
+| Within 2 cm | 13 of 14 | 11 of 14 (2.96 cm rms; 10 within 1 cm) | Missed |
+| Objects found, empty trial rejected | 13 of 14, and rejected | 14 of 14, rejected at −62.3 dB | Pass |
+| Same answer at 2.8 s as at 10 s | 13 of 14 | 14 of 14 | Pass |
+| App matches Python | Same answers; gaps of at most 0.05, 0.51 cm and 0.44 dB | Same answers on all 15; gaps of 0.0545, 0.05 cm and 0.14 dB | Missed |
+
+The output is in [`analysis/sealed_result.txt`](../analysis/sealed_result.txt). Nothing was retuned afterwards,
+so any fix now needs new recordings to test it.
+
+**Distance.** All three misses are the bobblehead at 10 to 14 cm: 20.2 cm at the 10 cm mark, and 16.7 and 16.6 cm
+at the 14 cm mark. The other 11 recordings are within 1.1 cm, and all 7 fish within 1 cm. The mean error is −0.08 cm for
+the fish and +2.11 cm for the bobblehead, well past the 0.5 cm bias target. The two 14 cm readings are the same
+mark placed twice, so at least there the error repeats, and is more than placement noise.
+
+**App match.** Every answer agrees. The miss is one bobblehead recording at P(fish) 0.37 in the app and 0.32 in
+Python. The mark was set at the largest gap on blocks A to C, which was too tight, but it stands. The likely cause
+is that the two don't start on quite the same ping, which matters most on the recording the model is least sure
+of; that hasn't been confirmed.
+
+**Comparisons**, recordings named of 14: the frozen model 14, nearest class mean 13, the strength-blurred model
+12, strength and delay alone 11, and the phone's old model, as it guessed at the time, 9.
+
+**Robustness.** With every echo 3 dB louder the frozen model names 12 of 14, and 3 dB quieter 13. Moving the window
+about 2 cm either way costs nothing. Against the previous set's empty scene it names 12 of 12, finds all 12, and
+puts 11 within 2 cm, and takes nothing empty for an object: not the 1 empty trial, nor any of 6 empty scenes, nor
+any of 7 empty scenes split in two. That is milder than on blocks A to C, on few recordings, so the question of how
+long an empty scene lasts stays open.
 
 ## The first 26 sets
 
@@ -469,7 +491,7 @@ close in.
 **Scale and scope.** 10 to 20 cm, not tens of metres; one stationary phone on a stand, not a moving
 handheld device; two objects, one at a time, on the centre line. It reads distance but not sideways
 position: the two crossing paths have the same length, so they can't show it. It has no answer for an
-object that is neither of the two: anything strong enough reads as one of them. And 42 recordings from
+object that is neither of the two: anything strong enough reads as one of them. And 56 recordings from
 one evening is a small sample.
 
 ## Next data to collect
@@ -491,7 +513,7 @@ Each answers a question the current data cannot:
 
 ## Reproduce
 
-The raw recordings and photos are not included. For the first model, `echoes.npz` holds what the signal
+The raw recordings are not included, and of the photos only the two on the README are. For the first model, `echoes.npz` holds what the signal
 chain extracts from the 26 sets, enough to rerun its tests from the model input on:
 
 ```
