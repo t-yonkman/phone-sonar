@@ -1,113 +1,93 @@
 # Phone sonar
 
-A Samsung Galaxy Note10+ used as an active sonar in air. It pings above hearing from its own speakers,
-listens with its own microphones, and a small model running on the phone says which of two objects
-is standing in front of it: a 3D-printed fish or a bobblehead.
+A Samsung Galaxy Note10+ used as an active sonar in air. The bottom speaker sweeps up from 18 to 22.5 kHz, the
+top speaker sweeps back down, and both mics record the echoes. From those echoes the phone works out, live,
+whether anything is in front of it, how far away it is, and which of two objects it is: a 3D-printed fish or a
+bobblehead.
 
 ![The setup from above and from the side: the phone on its stand, its speakers and mics, and the object in front](docs/figures/0_setup.png)
 
-It is a deliberately small version of the problem a handheld search sonar solves: say what a target
-is from its echo, on the device, from data collected in the field. Most of the work went into
-finding out what the signal contains, and what could be fooling the model.
+## The trial
 
-![What each object added to the empty scene, for all 26 sets](docs/echoes.png)
+- **Setup.** The phone stands on a paper mat marked by distance. The app shuffles the positions and says
+  what to place, so no label is typed, and each recording starts itself so the phone isn't touched.
+- **Each set.** An empty scene, then both objects at one mark, 10 to 20 cm out. Each block of 7 sets has
+  an empty trial, and repeats its first mark at the end to check for drift.
+- **Sealed test.** Blocks A to C built the method, always tested on a block it hadn't trained on. Block D
+  stayed unopened until the tests and pass marks were [committed](analysis/sealed.py).
 
-*What each object added to the empty scene, one line per set, on each speaker-to-mic path. Between
-the dashed lines, on the two paths that cross the phone, the fish (blue) and the bobblehead (orange)
-separate; that stretch is what the model is given. The grey band is the empty scene against itself:
-what is left when nothing has changed.*
+![The fish and the bobblehead on the paper mat at the 20 cm mark](docs/figures/photos_20cm.jpg)
 
-## In brief
+*Both objects at the 20 cm mark, photographed by the phone itself after each recording.*
 
-- **Data.** 26 sets, each an empty scene, the fish and the bobblehead recorded in one spot: 52
-  labelled object recordings, 1,248 examples of 0.4 s. The phone labels its own data, blind. One
-  further set is left out because its labels appear to be swapped.
-- **Result.** With each set held out in turn, a small CNN names 47 of the 52 recordings and a
-  nearest-class-mean baseline 46. At this sample size the CNN is not shown to add anything.
-- **Generalisation.** The first model named 16 of 16 in development and 9 of 12 on new sets in the
-  field; the cause was found and the input changed. The model built on that input then met 11 new
-  sets two weeks later, on the phone, blind: 18 of 22.
-- **Known weaknesses.** The input carries the object's distance as well as its shape, and the field
-  misses show it: they are the recordings whose echo arrived earlier or later than usual. 26 sets is
-  a small sample.
-- **On the phone.** A 48 KB ExecuTorch model and the signal chain in Java. Replayed on a PC, the
-  app's code gives the same answer as the Python pipeline for all 52 recordings.
-- **Scope.** Two hard objects in air, 10 cm away and always present: it classifies, it does not
-  detect or locate. Hard objects in air echo strongly from their surface; a body in water echoes
-  weakly and variably, mainly from the air inside it, and nothing here measures that
-  ([why](docs/details.md#limits)).
-- **Next.** Sets recorded at measured distances, and an input without timing, which on these data
-  holds up across distance at little cost at 10 cm.
+## The sealed result
 
-## Data and evaluation
+| Test on block D | Pass mark | Result | |
+|---|---|---|---|
+| Correct object named | 12 of 14 | 14 of 14 | Pass |
+| Distance within 2 cm | 13 of 14 | 11 of 14 | **Missed** |
+| Objects found, empty trial rejected | 13 of 14, rejected | 14 of 14, rejected | Pass |
+| Same answer at 2.8 s as at 10 s | 13 of 14 | 14 of 14 | Pass |
+| App matches Python | Same answers, P(fish) gaps of at most 0.05 | Same answers, one gap of 0.0545 | **Missed** |
 
-A Galaxy Note10+ stands on its long edge with the object 10 cm in front. Each end has a speaker and a
-mic, 16 cm apart; the model uses the two crossing paths, each speaker to the mic at the far end.
-Every test holds out whole sets, because a recording's examples are near-duplicates.
+All three distance misses are the bobblehead at 10 to 14 cm, the weak spot blocks A to C had already shown.
+One read 20.2 cm at the 10 cm mark. The other 11 are within 1.1 cm. The app gave every answer Python did; its
+miss is one probability gap against a mark set too tight, and it stands. Nothing was retuned afterwards. With
+14 recordings, 14 of 14 only shows accuracy above about 77%.
 
-Set 200754 is left out: its labels look swapped, which one mis-tap in the app would do, but that
-cannot be confirmed ([details](docs/details.md#the-second-field-test)).
-
-## Results
-
-Recordings named correctly:
-
-| Test | CNN | Nearest class mean |
+| Errors | Blocks A to C, each held out | Block D, sealed |
 |---|---|---|
-| Each of the 26 sets held out in turn | 47 of 52 | 46 of 52 |
-| Trained on the 15 sets up to 13 October, tested on the 11 from 27 October | 18 of 22 | 16 of 22 |
-| Control: both objects' echoes made equally loud | 44 of 52 | 45 of 52 |
+| Objects missed | 1 of 42 | 0 of 14 |
+| Empty mat taken for an object | 0 of 3 | 0 of 1 |
+| Wrong object named | 0 of 42 | 0 of 14 |
+| Distance within 2 cm | 38 of 42 | 11 of 14 |
 
-![Each recording's P(fish): the phone's answer at the time, and the 15-set model on the PC](docs/steps/real/11_guesses.png)
+Trained on blocks A to C alone, it also names 49 of 52 recordings from earlier sets on other days.
 
-*Every recording's P(fish). Diamonds: the phone's answer at the time (red: wrong). Bars: the 15-set
-model on the PC. Shaded: the 11 sets recorded after it was built, where phone and PC agree on every
-recording.*
+![Distance read from the echo against distance placed, and how loud each object's echo is](docs/distance.png)
 
-Most errors are fish named the bobblehead (4 of the CNN's 5 held-out misses). A class mean on one
-path names 47 of 52, as many as the CNN, so these data do not make the case for it. The second test
-is the fair one: its 11 sets were recorded after the input was chosen.
+*Blocks A to C. Left: distance read from the echo, not knowing the object. Right: how loud each echo is.*
 
-## What could be fooling it
+## What fooled it
 
-- **Distance instead of shape.** Nothing in the chain removes when the echo arrived, and that is
-  distance: 1 cm moves it 0.046 ms. Imitating a 3 cm move costs the CNN 7 (closer) to 16 (further)
-  of 52 recordings, and the field misses are echoes that arrived unusually early or late. Eight
-  statistics of the echo's shape, with no timing, hold 44 to 49 of 52 across the same moves.
-- **Loudness.** The fish echoes about 10 dB louder, but equally loud echoes still separate (44 of
-  52): the fish's is compact and the bobblehead's spread out (narrower for the fish in 23 of 26 sets).
-- **The room changing** after the empty scene, which broke the first model. The input now stops at
-  1.3 ms, as late as an object 10 cm away can echo.
-- **The phone.** Timing shifts by a fraction of a sample at each start, the level repeats every four
-  pings, and the earpiece barely reaches the far mic. Each was measured and handled.
+- **Strength, not shape.** It names the objects mostly by how strongly they reflect. Strength and delay alone
+  name 38 of 42, and removing loudness drops the model to 31.
+- **Too little bandwidth.** Range resolution is set by bandwidth, c/2B
+  ([Klauder et al., 1960](https://archive.org/details/bstj39-4-745)). The speakers deliver about 2.5 kHz, and
+  each echo spans about 5 cm. Both objects are smaller than that, so their echoes are no wider than the ping.
+  More data won't fix this; more bandwidth might.
+- **The bobblehead up close.** Its echo is weak at 10 to 14 cm, and the error can repeat: one mark placed twice
+  read 16.7 and 16.6 cm at 14. The echo holds steady from ping to ping, so it isn't moving. The cause is unknown.
+
+## The next trials
+
+1. **The bobblehead at 10 to 14 cm, at measured angles.** Why does the echo fall apart there?
+2. **A wider chirp, about 10 to 22 kHz.** Does shape become readable, and how audible is it?
+3. **A third object.** The model has no answer for "something else".
 
 ## How it works
 
 ![The signal chain, step by step](docs/steps/0_pipeline.png)
 
-Each speaker chirps from 18 to 22.5 kHz ten times a second, one sweeping up and one down; both mics
-record at 48 kHz. Correlating with each chirp turns echoes into peaks against delay. Each ping is
-divided by its own direct sound, lined up with the empty scene to a fraction of a sample, averaged in
-fours, and the empty scene subtracted. A 1-D CNN of about 9,400 parameters scores 0.2 to 1.3 ms of the
-two crossing paths, and the app averages over the recording. On the phone it runs in ExecuTorch
-(48 KB) with the signal chain in Java, which agrees with the Python pipeline on all 52 recordings.
+1. **Make profiles.** Correlating each mic with each chirp turns echoes into peaks against delay. Each ping is
+   divided by its own direct sound, which cancels drift.
+2. **Isolate the echo.** Pings are aligned with an empty scene to a fraction of a sample, averaged in fours, and
+   the empty scene subtracted.
+3. **Find the object.** Under −54 dB, nothing is there. Otherwise the echo's front edge gives the distance.
+4. **Name it.** A 1 ms window from that edge goes to a 1-D CNN of about 9,000 parameters, level left in, and the
+   answer is the average so far.
+
+A nearest class mean on the same input names 41 of 42 and 13 of 14, against the CNN's 42 and 14, so these data
+barely make the case for the network. The model is 48 KB in ExecuTorch, with the signal chain in Java.
 
 ## Limits
 
-What carries over to a search sonar is the processing, not the physics. Besides hard targets in air
-(above): there is no beam, so every direction lands in one echo; a real search has no empty scene to subtract; and it
-listens while it transmits, which only a separate speaker and mic allow.
+What carries over to a search sonar is the processing, not the physics. These are hard objects in air, and nothing
+here measures a body in water ([why](docs/details.md#limits)). There is no beam, a real search has no empty scene to
+subtract, and it listens while it transmits, which only a separate speaker and mic allow.
 
 ## More
 
-[docs/details.md](docs/details.md) has every test with its numbers, both field tests, what the phone
-does to the data, the signal chain step by step, the reasoning behind each limit, the next data to
-collect and how to build the app. [docs/writeup.md](docs/writeup.md) walks through the figures. To
-rerun the tests from the extracted echoes (the raw audio is not included):
-
-```
-pip install -r requirements.txt
-cd analysis
-python classify.py                  # each set held out in turn
-python classify.py since 195308     # trained on the 15 sets up to 13 October, tested on the 11 from 27 October
-```
+[docs/details.md](docs/details.md) has every test and number, and [docs/recording.md](docs/recording.md) how to run
+a block. The raw recordings aren't included, so the analysis can't be rerun from here;
+[the sealed run's output](analysis/sealed_result.txt) is.

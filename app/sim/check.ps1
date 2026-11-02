@@ -4,6 +4,7 @@
 #     recordings. The phone runs the network with PyTorch's runtime, which is phone code and cannot run
 #     here, so JavaNet (the same weights worked through in plain Java) stands in for it. The runtime itself
 #     is checked by analysis\export.py on the PC and by the app on the phone each time it opens.
+#  3. FollowCheck: the same for test mode, Sonar and Follow against what follow.py's network said.
 $root = "$env:LOCALAPPDATA\Android"; $env:JAVA_HOME = "$root\jdk-17"; $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 $jar = "$root\Sdk\platforms\android-34\android.jar"
 $app = Split-Path $PSScriptRoot
@@ -13,13 +14,16 @@ powershell -ExecutionPolicy Bypass -File "$app\build.ps1" -NoInstall | Select-Ob
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out | Out-Null
 # Log.java stands in for android.util.Log, so it must come before the SDK's stub on the class path
-javac -encoding UTF-8 -cp "$cls;$jar" -d $out "$PSScriptRoot\Log.java" "$PSScriptRoot\JavaNet.java" "$PSScriptRoot\RecorderCheck.java" "$PSScriptRoot\Parity.java"
+javac -encoding UTF-8 -cp "$cls;$jar" -d $out "$PSScriptRoot\Log.java" "$PSScriptRoot\JavaNet.java" "$PSScriptRoot\RecorderCheck.java" "$PSScriptRoot\Parity.java" "$PSScriptRoot\FollowCheck.java" "$PSScriptRoot\RunSheetCheck.java"
+java -cp "$out;$cls;$jar" dev.phonesonar.RunSheetCheck
 java -cp "$out;$cls;$jar" dev.phonesonar.RecorderCheck $out
 Get-ChildItem "$out\set_*" | ForEach-Object { "{0}  {1:N0} bytes" -f $_.Name, $_.Length }
 ""
 $sets = "$app\..\recordings\sets"
 if (Test-Path "$sets\set_*.wav") {
     java -cp "$out;$cls;$jar" dev.phonesonar.Parity $sets "$PSScriptRoot\fish_or_bobblehead.bin" "$app\..\analysis\parity.json" $out
+    ""
+    java -cp "$out;$cls;$jar" dev.phonesonar.FollowCheck $sets "$PSScriptRoot\follow.bin" "$app\..\analysis\parity_follow.json" "$app\assets\follow.txt" $out
 } else {
     "no recordings in recordings\sets (the raw audio is not in the repository): the replay was skipped"
 }

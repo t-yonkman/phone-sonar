@@ -1,0 +1,24 @@
+BLOCK D: 7 sets
+
+Main tests
+1. Naming: 14 of 14 right, pass mark 12   PASS
+2. Distance: 11 of 14 within 2 cm, pass mark 13; rms 2.96 cm, within 1 cm 10   FAIL
+3. Detection: 14 of 14 objects found, pass mark 13; 1 of 1 empty trials rejected, levels [-62.3]   PASS
+4. First guess: 14 of 14 the same at 2.8 s as at 10 s, pass mark 13   PASS
+5. App match: run app/sim/sealed.ps1; pass is the same answers, and gaps of at most 0.05 in P(fish), 0.51 cm and 0.44 dB
+
+Comparisons, no pass marks
+  Strength-blurred model: 12 of 14
+  Strength and delay alone: 11 of 14
+  Nearest average: 13 of 14
+  The phone's old model, as it guessed at the time: 9 of 14
+  Mean distance error: fish -0.08 cm, bobblehead +2.11 cm
+
+Robustness, no pass marks
+  Against the previous set's empty scene: 12 of 12 named, 11 within 2 cm, 12 found
+  Taken for an object on the previous set's empty scene: 0 of 1 empty trials, 0 of 6 empty scenes
+  Empty scenes split in two, taken for an object: 0 of 7
+  Echo 3 dB louder 12 of 14, quieter 13; window moved 5 samples later 14, earlier 14
+  Same mark placed twice: fish 14.3 then 14.3 cm, bobblehead 16.7 then 16.6 cm
+
+App match, from app/sim/sealed.ps1: 15 recordings: largest gap from the PC: P(fish) 0.0545, distance 0.05 cm, level 0.14 dB; same answers on all 15 (14 named, 1 nothing there); 15 the same at 2.8 s as at the end. Missed: the P(fish) mark was 0.05.

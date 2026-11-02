@@ -33,7 +33,7 @@ def save(fig, name):
 
 
 def wav(set_id, label):
-    return next(FOLDER.glob(f"set_*_{set_id}_*_{label}.wav"))
+    return next(FOLDER.glob(f"set_{set_id}_*_{label}.wav"))
 
 
 def raw(set_id):
@@ -203,9 +203,7 @@ def guesses(names, sets, new):
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     names, sets = read()
-    ids = [s["id"] for s in sets]
-    # the folder name gives only the time of day; put the sets in the order they were made
-    sets = sorted(sets, key=lambda s: s["made"])
+    sets = sorted(sets, key=lambda s: s["id"])                 # ids are date and time: the order the sets were made
     # "new": the sets the saved model (fish_or_bobblehead.pt) was not trained on
     trained_on = torch.load(steps.Path(__file__).parent / "fish_or_bobblehead.pt", weights_only=False)["sets"]
     new = [s["id"] for s in sets if s["id"] not in trained_on]

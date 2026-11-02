@@ -36,12 +36,17 @@ public class Parity {
     }
 
     static Sonar.Update run(File f, int place, String label, float[][][] scene, Classifier net, File out) throws Exception {
+        return run(f, place, label, scene, net, out, null);
+    }
+
+    static Sonar.Update run(File f, int place, String label, float[][][] scene, Classifier net, File out, Sonar.Watcher watcher) throws Exception {
         short[] x = wav(f);
         int nch = 2, frames = x.length / nch, step = 1200;
         final Sonar.Update[] last = {null};
         Sonar sonar = new Sonar("parity", place, label, 0.1f, 11, scene, net, out, u -> {
             if (u.finished) last[0] = u;
         });
+        sonar.watcher = watcher;
         Method configure = Sonar.class.getDeclaredMethod("configure", int.class);
         Method feed = Sonar.class.getDeclaredMethod("feed", short[].class, int.class);
         Method finish = Sonar.class.getDeclaredMethod("finish", String.class);
@@ -75,12 +80,12 @@ public class Parity {
             String[] part = f.getName().replace(".wav", "").split("_");
             String label = part[part.length - 1];
             int which = label.equals("background") ? 0 : label.equals("fish") ? 1 : label.equals("bobblehead") ? 2 : -1;
-            if (which >= 0) found.computeIfAbsent(part[2], k -> new File[3])[which] = f;
+            if (which >= 0) found.computeIfAbsent(part[1] + "_" + part[2], k -> new File[3])[which] = f;
         }
         int right = 0, total = 0;
         double worst = 0;
         long spent = 0;
-        System.out.println("set     object      app P(fish)  PC P(fish)   app says    slides (samples)   echo dB  examples");
+        System.out.println("set              object      app P(fish)  PC P(fish)   app says    slides (samples)   echo dB  examples");
         for (Map.Entry<String, File[]> e : found.entrySet()) {
             File[] f = e.getValue();
             if (f[0] == null) continue;

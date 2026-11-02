@@ -23,7 +23,7 @@ from shape import AROUND, LAGS, REF, aligned, autocorr, middles, stats
 from steps import AXIS, BLUE, COLOUR, INK, INK2, MUTED, ORANGE
 
 OUT = Path(__file__).parent.parent / "docs" / "figures"
-SHOWN = "185816"   # the set whose background figure 1 shows
+SHOWN = "20261012_185816"   # the set whose background figure 1 shows
 
 
 def save(fig, name):
@@ -79,7 +79,7 @@ def setup():
     arrow(a, hit_b, bottom_mic, GREEN, 1.3, ls=(0, (4, 2)))
     arrow(a, (7.6, 2.9), (-7.6, 2.9), MUTED, 1, ls=(0, (1, 2)))
     span(a, (-8.1, -5.0), (8.1, -5.0), "16 cm between the ends", (0, -0.6))
-    span(a, (12.6, 0), (12.6, 10.1), "10 cm", (0.7, 0), rot=90)
+    span(a, (12.6, 0), (12.6, 10.1), "10-20 cm", (0.7, 0), rot=90)
     a.plot([], [], color=PURPLE, lw=2.6, label="loudspeaker to the top mic, by way of the object: the path that does most of the work")
     a.plot([], [], color=GREEN, lw=1.3, ls=(0, (4, 2)), label="earpiece to the bottom mic, by way of the object: much weaker")
     a.plot([], [], color=MUTED, lw=1, ls=(0, (1, 2)), label="the ping straight across the phone, which the echo must be told from")
@@ -107,7 +107,7 @@ def setup():
     a.text(mid[0] - 0.55, mid[1], "screen", ha="center", va="center", fontsize=9, color=BLUE, rotation=90 - np.degrees(th))
     thing(a, 9.0, 0.0, 2.4, 4.0)
     a.text(10.2, 4.4, "object", ha="center", va="bottom", fontsize=10, color=INK)
-    span(a, (0.0, -1.1), (10.2, -1.1), "10 cm", (0, -0.6))
+    span(a, (0.0, -1.1), (10.2, -1.1), "10-20 cm", (0, -0.6))
     a.text(15, 9.6, "On its long edge in a Spigen case,\nback towards the object, leaning on\nthe kickstand. The speakers and mics\nare at the two ends, in and out of the page.",
            ha="right", va="top", fontsize=9, color=INK2, linespacing=1.4)
     a.set(xlim=(-7, 15), ylim=(-2.8, 10), aspect="equal", title="b  From the side", anchor="N")
@@ -118,7 +118,7 @@ def setup():
 
 
 def what_the_mics_hear():
-    path = next(FOLDER.glob(f"set_*_{SHOWN}_1_background.wav"))
+    path = next(FOLDER.glob(f"set_{SHOWN}_1_background.wav"))
     s = json.loads(path.with_suffix(".json").read_text())
     x, fs = sf.read(str(path), always_2d=True)          # channel 0 the top mic, channel 1 the bottom mic
     up, _ = steps.chirp(True)
@@ -193,7 +193,7 @@ BAND = signal.butter(6, [17000, 23500], btype="bandpass", fs=48000, output="sos"
 def cycles(label, band=False):
     """Every whole 100 ms cycle of one of SHOWN's recordings, each starting 2 ms before the bottom speaker's ping
     reaches the bottom mic: (cycles, 4800, mics). With band, only 17 to 23.5 kHz is kept, before cutting."""
-    path = next(FOLDER.glob(f"set_*_{SHOWN}_*_{label}.wav"))
+    path = next(FOLDER.glob(f"set_{SHOWN}_*_{label}.wav"))
     x, fs = sf.read(str(path), always_2d=True)
     up, _ = steps.chirp(True)
     m = np.abs(signal.correlate(x[fs:fs + 2 * 4800, 1], up, mode="valid"))
