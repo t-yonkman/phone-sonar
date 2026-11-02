@@ -36,12 +36,17 @@ public class Parity {
     }
 
     static Sonar.Update run(File f, int place, String label, float[][][] scene, Classifier net, File out) throws Exception {
+        return run(f, place, label, scene, net, out, null);
+    }
+
+    static Sonar.Update run(File f, int place, String label, float[][][] scene, Classifier net, File out, Sonar.Watcher watcher) throws Exception {
         short[] x = wav(f);
         int nch = 2, frames = x.length / nch, step = 1200;
         final Sonar.Update[] last = {null};
         Sonar sonar = new Sonar("parity", place, label, 0.1f, 11, scene, net, out, u -> {
             if (u.finished) last[0] = u;
         });
+        sonar.watcher = watcher;
         Method configure = Sonar.class.getDeclaredMethod("configure", int.class);
         Method feed = Sonar.class.getDeclaredMethod("feed", short[].class, int.class);
         Method finish = Sonar.class.getDeclaredMethod("finish", String.class);

@@ -40,7 +40,11 @@ final class Net implements Classifier {
      * @return the network, or null if there is none to guess with
      */
     static Net load(Context context, StringBuilder note) {
-        String name = "fish_or_bobblehead.pte";
+        return load(context, "fish_or_bobblehead.pte", "selftest.bin", note);
+    }
+
+    /** @param name,examples the exported model and its examples, in the app's assets */
+    static Net load(Context context, String name, String examples, StringBuilder note) {
         try {
             File program = new File(context.getFilesDir(), name);   // the runtime wants a file, and assets are not files
             try (InputStream in = context.getAssets().open(name); FileOutputStream out = new FileOutputStream(program)) {
@@ -49,7 +53,7 @@ final class Net implements Classifier {
             }
             Net loaded = new Net(program);
             double[] check;
-            try (InputStream in = context.getAssets().open("selftest.bin")) {
+            try (InputStream in = context.getAssets().open(examples)) {
                 check = loaded.check(in);
             }
             Log.i(Sonar.TAG, String.format(Locale.US, "PyTorch model check: %.0f examples, largest difference from the PC %.6f; runtime backends: %s",

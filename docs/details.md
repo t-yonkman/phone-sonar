@@ -344,7 +344,7 @@ powershell -ExecutionPolicy Bypass -File app\sim\check.ps1   # the app's own cod
 | `analysis/steps.py`, `steps_real.py` | A rough figure for every step, simulated and real (`docs/steps/`), and the phone's answers against the saved model |
 | `analysis/export.py` | PyTorch to ExecuTorch, with the examples the app checks itself against |
 | `analysis/echoes.npz` | The echoes of all 26 sets |
-| `app/src/` | The Android app: `Sonar` (audio), `Judge` (signal chain), `Net` (ExecuTorch), `MainActivity` (guessing), `BlockActivity`, `RunSheet` and `Photo` (collecting a block) |
+| `app/src/` | The Android app: `Sonar` (audio), `Judge` (signal chain), `Net` (ExecuTorch), `Follow`, `TestActivity` and `LiveView` (test mode), `BlockActivity`, `RunSheet` and `Photo` (collecting a block) |
 | `app/sim/` | PC checks of the app's code |
 | `app/pull.ps1` | Copies new recordings from the phone |
 | `docs/` | Figures, a longer walk through them (`writeup.md`), and how to record a block (`recording.md`) |

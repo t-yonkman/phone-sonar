@@ -11,8 +11,7 @@ labelled by hand.
 3. Stand the phone on its kickstand with the back of the case, at the floor, on the mat's zero line. The back
    faces the mat. Distances run from there to the centre of the object's base.
 4. Set the media volume to 10 or 11. The app warns if it isn't.
-5. Open Phone Sonar, press **Collect a block**, and pick the block. A block already begun carries on where it
-   stopped.
+5. Open Phone Sonar, press **Collect**, and pick the block. A block already begun carries on where it stopped.
 
 Blocks A, B and C show the guesses at the end of each set. Block D is the sealed test: it never shows them, and
 nobody looks at its results until the method is frozen. **Practice** is 3 sets and is not used for anything.
@@ -46,6 +45,18 @@ A Bluetooth shutter remote also works, on any set: it starts a recording straigh
 - **Flag set** marks the current or last set as having gone wrong: bumped, wrong object, someone walked past.
   Flagged recordings are kept, and any exclusion follows rules set before looking at the results.
 - **Restart set** flags what has been recorded of the set and starts it again.
+
+## Test mode
+
+The app opens in test mode, which says what is on the mat, how far away and how sure, while it pings. It saves
+nothing. Set up as for a block, with the mat clear, and press **Start**. After the empty scene the phone isn't
+touched again, so each test starts itself after a 20 second countdown: 3 seconds to get clear, then 10 seconds of
+pings. The echo shows along the mat from the first pings. The first guess comes about 3 seconds in and updates
+every 0.4 seconds from all the pings so far, and a trace shows how it has moved.
+
+Tests run one after another until **Stop**, or until the empty scene is two minutes old, when it asks for a new one.
+Leaving the mat empty is a fair test too: the answer should be "Nothing there". The percentage is the network's own
+average P of the object it names, which runs high and isn't a measured chance of being right.
 
 ## Afterwards
 

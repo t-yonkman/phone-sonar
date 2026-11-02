@@ -44,7 +44,7 @@ final class Judge {
     }
 
     /** A profile's spectrum, so that it can be read off at a fraction of a sample. */
-    private static void spectrum(float[] re, float[] im, double[] outRe, double[] outIm) {
+    static void spectrum(float[] re, float[] im, double[] outRe, double[] outIm) {
         for (int f = 0; f < W; f++) {
             double a = 0, b = 0;
             for (int k = 0, j = 0; k < W; k++, j = (j + f) % W) {
@@ -57,7 +57,7 @@ final class Judge {
     }
 
     /** Turn a spectrum into that of the same profile read off d samples later. */
-    private static void slide(double[] xRe, double[] xIm, double d, double[] outRe, double[] outIm) {
+    static void slide(double[] xRe, double[] xIm, double d, double[] outRe, double[] outIm) {
         for (int f = 0; f < W; f++) {
             double th = 2 * Math.PI * (f < W / 2 ? f : f - W) * d / W, c = Math.cos(th), s = Math.sin(th);
             outRe[f] = xRe[f] * c - xIm[f] * s;
@@ -66,7 +66,7 @@ final class Judge {
     }
 
     /** The profile with this spectrum, at delay k: {real, imaginary}. */
-    private static void at(double[] xRe, double[] xIm, int k, double[] out) {
+    static void at(double[] xRe, double[] xIm, int k, double[] out) {
         double a = 0, b = 0;
         for (int f = 0, j = 0; f < W; f++, j = (j + k) % W) {
             a += xRe[f] * COS[j] - xIm[f] * SIN[j];
@@ -74,6 +74,37 @@ final class Judge {
         }
         out[0] = a / W;
         out[1] = b / W;
+    }
+
+    /**
+     * The slide, from the whole recording's average ping on the pair with the mic beside the speaker.
+     *
+     * @param re,im   that pair's pings: [ping][delay]
+     * @param bgRe,bgIm the background's average ping on that pair
+     * @return in samples
+     */
+    static double fit(float[][] re, float[][] im, int count, float[] bgRe, float[] bgIm) {
+        double[] sRe = new double[W], sIm = new double[W], mRe = new double[W], mIm = new double[W], v = new double[2], ref = new double[2];
+        float[] avRe = new float[W], avIm = new float[W];
+        average(re, im, 0, count, avRe, avIm);
+        spectrum(avRe, avIm, sRe, sIm);
+        double best = Double.MAX_VALUE, found = 0;
+        for (int step = -250; step <= 250; step++) {   // up to a sample each for the fraction and for which lobe was taken as the arrival
+            double d = step / 100.0, cost = 0;
+            slide(sRe, sIm, d, mRe, mIm);
+            at(mRe, mIm, PRE, ref);
+            double mag2 = ref[0] * ref[0] + ref[1] * ref[1];
+            for (int k = GUARD0; k < GUARD1; k++) {
+                at(mRe, mIm, k, v);
+                double qRe = (v[0] * ref[0] + v[1] * ref[1]) / mag2 - bgRe[k], qIm = (v[1] * ref[0] - v[0] * ref[1]) / mag2 - bgIm[k];
+                cost += qRe * qRe + qIm * qIm;
+            }
+            if (cost < best) {
+                best = cost;
+                found = d;
+            }
+        }
+        return found;
     }
 
     /**
@@ -92,25 +123,8 @@ final class Judge {
         float[] avRe = new float[W], avIm = new float[W];
         for (int s = 0; s < pairs.length; s++) {
             int own = pairs[s][0], far = pairs[s][1];
-            // 1. the slide, from the whole recording's average ping on the pair with the mic beside the speaker
-            average(re[own], im[own], 0, count, avRe, avIm);
-            spectrum(avRe, avIm, sRe, sIm);
-            double best = Double.MAX_VALUE;
-            for (int step = -250; step <= 250; step++) {   // up to a sample each for the fraction and for which lobe was taken as the arrival
-                double d = step / 100.0, cost = 0;
-                slide(sRe, sIm, d, mRe, mIm);
-                at(mRe, mIm, PRE, ref);
-                double mag2 = ref[0] * ref[0] + ref[1] * ref[1];
-                for (int k = GUARD0; k < GUARD1; k++) {
-                    at(mRe, mIm, k, v);
-                    double qRe = (v[0] * ref[0] + v[1] * ref[1]) / mag2 - bgRe[own][k], qIm = (v[1] * ref[0] - v[0] * ref[1]) / mag2 - bgIm[own][k];
-                    cost += qRe * qRe + qIm * qIm;
-                }
-                if (cost < best) {
-                    best = cost;
-                    r.slide[s] = d;
-                }
-            }
+            // 1. the slide
+            r.slide[s] = fit(re[own], im[own], count, bgRe[own], bgIm[own]);
             // 2. each four-ping average of the far pair, slid, against the speaker's own slid direct sound, less the background
             for (int b = 0; b < blocks; b++) {
                 average(re[own], im[own], b * BLOCK, BLOCK, avRe, avIm);
@@ -149,7 +163,7 @@ final class Judge {
         return r;
     }
 
-    private static void average(float[][] re, float[][] im, int from, int n, float[] outRe, float[] outIm) {
+    static void average(float[][] re, float[][] im, int from, int n, float[] outRe, float[] outIm) {
         for (int k = 0; k < W; k++) {
             float a = 0, b = 0;
             for (int i = from; i < from + n; i++) {

@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -45,7 +46,6 @@ public class BlockActivity extends Activity implements Sonar.Listener {
     private static final String[] BLOCKS = {"A", "B", "C", SEALED, PRACTICE};
     private static final int PRACTICE_SETS = 3;
     private static final int COUNTDOWN = 20;   // seconds to change what is on the mat and step back
-    private static final float AMP = 0.1f;     // see MainActivity.start
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final List<String> filed = new ArrayList<>();          // the recordings of the set under way, or the last one
@@ -224,7 +224,7 @@ public class BlockActivity extends Activity implements Sonar.Listener {
         }
         String label = sheet.sets.get(at).trials.get(trial);
         int volume = ((AudioManager) getSystemService(AUDIO_SERVICE)).getStreamVolume(AudioManager.STREAM_MUSIC);
-        sonar = new Sonar(set, trial + 1, label, AMP, volume, trial == 0 ? null : scene, net, dir, this);
+        sonar = new Sonar(set, trial + 1, label, Sonar.AMP, volume, trial == 0 ? null : scene, net, dir, this);
         sonar.start();
         go.setEnabled(false);
     }
@@ -259,10 +259,10 @@ public class BlockActivity extends Activity implements Sonar.Listener {
         int truth = Arrays.asList(Classifier.CLASSES).indexOf(label);
         if (truth >= 0) extra.append(String.format(Locale.US, "\"distance_cm\": %d, \"sideways_cm\": %d, ", p.distance, p.sideways));
         if (u.guess != null) {
-            extra.append(MainActivity.guessFields(u.guess, truth));
+            extra.append(guessFields(u.guess, truth));
             guesses.append(String.format(Locale.US, "%s: P(fish) %.2f   ", label, u.guess.p[0]));
         }
-        MainActivity.file(dir, u, label, extra.toString());
+        file(dir, u, label, extra.toString());
         filed.add(u.file + "_" + label);
         if (label.equals(RunSheet.BACKGROUND)) scene = u.scene;
         trial++;
@@ -273,6 +273,25 @@ public class BlockActivity extends Activity implements Sonar.Listener {
             log.setText(block.equals(SEALED) ? "" : guesses.toString());
         }
         prompt();
+    }
+
+    /** What the guessing made of a recording, as part of a JSON object. @param truth the class it really was, or -1 if nothing was there */
+    private static String guessFields(Judge.Result g, int truth) {
+        int pick = g.p[0] >= g.p[1] ? 0 : 1;
+        return String.format(Locale.US, "\"guess\": \"%s\", \"p_fish\": %.4f, %s\"echo_level_db\": %.1f, \"slides\": [%.2f, %.2f], ",
+                Classifier.CLASSES[pick], g.p[0], truth < 0 ? "" : "\"guess_right\": " + (pick == truth) + ", ", g.level, g.slide[0], g.slide[1]);
+    }
+
+    /** Give the recording its final name, now that what was in front is known, and write its settings beside it. */
+    private static void file(File dir, Sonar.Update u, String label, String extra) {
+        String name = u.file + "_" + label;
+        if (!new File(dir, u.file + ".wav").renameTo(new File(dir, name + ".wav"))) Log.e(Sonar.TAG, "could not rename " + u.file);
+        try (PrintWriter pw = new PrintWriter(new File(dir, name + ".json"))) {
+            pw.println("{\"label\": \"" + label + "\", \"ok\": true, " + extra + u.settings + "}");
+        } catch (Exception e) {
+            Log.e(Sonar.TAG, "could not write settings for " + name, e);
+        }
+        Log.i(Sonar.TAG, "filed " + name + (extra.isEmpty() ? "" : "  " + extra));
     }
 
     /** Give up the set under way: the recordings so far are flagged and it starts again from its empty scene. */
@@ -327,6 +346,6 @@ public class BlockActivity extends Activity implements Sonar.Listener {
         super.onPause();
         hold();
         Sonar s = sonar;
-        if (s != null) s.running = false;   // as in MainActivity: it reports back and the recording is repeated
+        if (s != null) s.running = false;   // leaving the app abandons the recording under way; it reports back and is repeated
     }
 }

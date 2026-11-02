@@ -46,9 +46,18 @@ final class Sonar extends Thread {
     // The top speaker is heard louder at its own mic than the bottom one is at its (0.32 against 0.22
     // for the same drive), so it is driven less, to keep both near a quarter of the mics' range.
     static final float TOP_TRIM = 0.7f;
+    // With media volume at 11 of 15, 0.1 puts the ping at a quarter of the bottom mic's range. The mic's
+    // level stops rising in step with the ping above that (0.2 gives 0.41, not 0.5) and clips by 0.4.
+    static final float AMP = 0.1f;
 
     interface Listener {
         void onUpdate(Update u);
+    }
+
+    /** Told of each ping as it is kept, on this thread, for whatever wants to work on them as they come. */
+    interface Watcher {
+        /** @param pairs as for Judge.judge. Pings below count stay as they are: they are safe to read from another thread. */
+        void kept(float[][][] re, float[][][] im, int count, int[][] pairs);
     }
 
     static final class Update {
@@ -87,6 +96,7 @@ final class Sonar extends Thread {
     }
 
     volatile boolean running = true;   // cleared from outside to abandon the run without saving
+    Watcher watcher;                   // set before start, if anything wants the pings as they come
 
     private final String set, label;
     private final int place;
@@ -117,6 +127,7 @@ final class Sonar extends Thread {
      * @param volume the phone's media volume step, only noted alongside the recording
      * @param scene  the average ping of this set's background, for guessing what is in front; null to record the background itself
      * @param net    the network that does the guessing, or null to only record
+     * @param outDir where to save the recording, or null to save nothing
      */
     Sonar(String set, int place, String label, float amp, int volume, float[][][] scene, Classifier net, File outDir, Listener listener) {
         super("sonar");
@@ -176,7 +187,7 @@ final class Sonar extends Thread {
             boolean clipped = false;
             for (int c = 0; c < nch; c++) clipped |= loudest[c] > 0.99;
             u.ok = kept >= 9 * LENGTH && relocks == 0 && !clipped;   // ten pings a second from each speaker
-            u.file = save();
+            u.file = outDir == null ? "" : save();
             u.settings = settings();
             if (u.file == null) {
                 u.ok = false;
@@ -190,18 +201,22 @@ final class Sonar extends Thread {
                 u.text = "saved " + label;
                 if (net != null) {
                     say("working out what it is");
-                    // the pairs, speaker by speaker, the one with the mic beside the speaker first
-                    int[][] pairs = new int[pings.length][nch];
-                    for (int s = 0; s < pings.length; s++) {
-                        pairs[s][0] = s * nch + pings[s].mic;
-                        for (int c = 0, i = 1; c < nch; c++) if (c != pings[s].mic) pairs[s][i++] = s * nch + c;
-                    }
-                    u.guess = Judge.judge(qRe, qIm, kept, scene[0], scene[1], pairs, net);
+                    u.guess = Judge.judge(qRe, qIm, kept, scene[0], scene[1], pairs(), net);
                 }
             }
         }
         Log.i(TAG, "finished: " + u.text.replace('\n', ' ') + (u.ok ? "" : "  (not counted)"));
         listener.onUpdate(u);
+    }
+
+    /** The pairs, speaker by speaker, the one with the mic beside the speaker first. */
+    private int[][] pairs() {
+        int[][] pairs = new int[pings.length][nch];
+        for (int s = 0; s < pings.length; s++) {
+            pairs[s][0] = s * nch + pings[s].mic;
+            for (int c = 0, i = 1; c < nch; c++) if (c != pings[s].mic) pairs[s][i++] = s * nch + c;
+        }
+        return pairs;
     }
 
     /**
@@ -396,7 +411,10 @@ final class Sonar extends Thread {
                 p.level[c] = (float) (2 * Math.sqrt(top) / energy);
             }
         }
-        if (keep) kept++;
+        if (keep) {
+            kept++;
+            if (watcher != null) watcher.kept(qRe, qIm, kept, pairs());
+        }
         idx += CYCLE;
         publish();
     }
