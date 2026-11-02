@@ -104,9 +104,9 @@ def pipeline():
              ("6  Reject", "clipped, relocked, or\nfewer than 90 pings", "ping"),
              ("7  Timing fix", "fractional slide onto the\nbackground, 0.1 to 0.4 ms", "set"),
              ("8  Average 4, subtract", "four-ping blocks minus\nthe empty scene", "set"),
-             ("9  Gate", "the two cross paths,\n0.2 to 1.3 ms", "model"),
-             ("10  Features", "dB, own loudness removed,\n-50..+10 dB to 0..1", "model"),
-             ("11  CNN, average", "one score per block,\naveraged over ~25", "model")]
+             ("9  Find the echo", "under -54 dB: nothing there;\nedge, then a 1 ms window", "model"),
+             ("10  Features", "dB against the direct sound,\n-80..-20 dB to 0..1", "model"),
+             ("11  CNN, average", "one score per block,\naveraged over all so far", "model")]
     group = {"tx": ("Transmit and record", GREEN), "ping": ("Every ping", BLUE),
              "set": ("Against the background", PURPLE), "model": ("Model", ORANGE)}
     fig, ax = plt.subplots(figsize=(15, 5.6))
@@ -129,7 +129,7 @@ def pipeline():
     for i, (name, col) in enumerate(group.values()):
         ax.add_patch(FancyBboxPatch((0.15 + 1.45 * i, 2.12), 0.12, 0.09, boxstyle="round,pad=0.01", fc=col + "1a", ec=col))
         ax.text(0.33 + 1.45 * i, 2.165, name, va="center", fontsize=9.5, color=INK2)
-    ax.text(5.97, 0.05, "Sonar.java does 1 to 6 while recording; Judge.java does 7 to 11 once it stops",
+    ax.text(5.97, 0.05, "Sonar.java does 1 to 6 while pinging; Follow.java does 7 to 11 every 0.4 s",
             ha="right", fontsize=9, color=MUTED, style="italic")
     save(fig, "0_pipeline.png")
 
