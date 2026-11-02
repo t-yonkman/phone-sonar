@@ -14,6 +14,7 @@ made to a run sheet also have, in the .json:
     block          the run of sets made in one spot
     distance_cm    from the back of the case to the centre of the object's base
     sideways_cm    from the middle of the phone to that centre, positive towards the bottom speaker
+    flagged        true if it was marked at the time as having gone wrong
 
 and may have a photo beside them, <the same name>.jpg. Older recordings have none of these. Their distance
 is not known: "10 cm" was never measured from a fixed point.
@@ -47,13 +48,14 @@ def read(folder=FOLDER):
             continue
         s, names, _, Q, _ = load(files[set_id]["background"])
         qb = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
-        entry = dict(id=set_id, block=s.get("block", ""), background=qb.mean(1), background_pings=qb, settings=s,
-                     slides={}, distance={}, sideways={})
+        entry = dict(id=set_id, block=s.get("block", ""), flagged=s.get("flagged", False), background=qb.mean(1),
+                     background_pings=qb, settings=s, slides={}, distance={}, sideways={})
         for o in OBJECTS:
             m, _, _, Q, _ = load(files[set_id][o])
             entry[o + " as recorded"] = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]
             entry[o], entry["slides"][o] = match(entry[o + " as recorded"], entry["background"], names)
             entry["distance"][o], entry["sideways"][o] = m.get("distance_cm", np.nan), m.get("sideways_cm", np.nan)
+            entry["flagged"] = entry["flagged"] or m.get("flagged", False)
         if "empty" in files[set_id]:
             _, _, _, Q, _ = load(files[set_id]["empty"])
             entry["empty as recorded"] = Q[:, ~np.isnan(Q[:, :, 0]).any(axis=0)]

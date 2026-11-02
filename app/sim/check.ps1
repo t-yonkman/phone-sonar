@@ -13,7 +13,8 @@ powershell -ExecutionPolicy Bypass -File "$app\build.ps1" -NoInstall | Select-Ob
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out | Out-Null
 # Log.java stands in for android.util.Log, so it must come before the SDK's stub on the class path
-javac -encoding UTF-8 -cp "$cls;$jar" -d $out "$PSScriptRoot\Log.java" "$PSScriptRoot\JavaNet.java" "$PSScriptRoot\RecorderCheck.java" "$PSScriptRoot\Parity.java"
+javac -encoding UTF-8 -cp "$cls;$jar" -d $out "$PSScriptRoot\Log.java" "$PSScriptRoot\JavaNet.java" "$PSScriptRoot\RecorderCheck.java" "$PSScriptRoot\Parity.java" "$PSScriptRoot\RunSheetCheck.java"
+java -cp "$out;$cls;$jar" dev.phonesonar.RunSheetCheck
 java -cp "$out;$cls;$jar" dev.phonesonar.RecorderCheck $out
 Get-ChildItem "$out\set_*" | ForEach-Object { "{0}  {1:N0} bytes" -f $_.Name, $_.Length }
 ""

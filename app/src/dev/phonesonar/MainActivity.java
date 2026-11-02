@@ -2,6 +2,7 @@ package dev.phonesonar;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.media.AudioManager;
@@ -17,8 +18,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -55,7 +54,8 @@ public class MainActivity extends Activity implements Sonar.Listener {
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        String ready = loadNet();
+        StringBuilder ready = new StringBuilder();
+        net = Net.load(this, ready);
 
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
         LinearLayout root = new LinearLayout(this);
@@ -72,8 +72,12 @@ public class MainActivity extends Activity implements Sonar.Listener {
             step = 0;
             prompt("Set abandoned.");
         });
+        Button collect = new Button(this);
+        collect.setText("Collect a block");
+        collect.setOnClickListener(v -> startActivity(new Intent(this, BlockActivity.class)));
         row.addView(go);
         row.addView(fresh);
+        row.addView(collect);
 
         answer = new LinearLayout(this);
         for (int c = 0; c < was.length; c++) {
@@ -106,37 +110,6 @@ public class MainActivity extends Activity implements Sonar.Listener {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
         } else if (getIntent().getIntExtra("auto", 0) > 0) {
             start();
-        }
-    }
-
-    /**
-     * Hand the exported PyTorch model to the ExecuTorch runtime, and have it redo the examples that were
-     * saved with PyTorch's own answers when the model was exported. The guessing is only switched on if
-     * the phone gets the same answers as the PC did.
-     *
-     * @return a line for the screen saying how that went
-     */
-    private String loadNet() {
-        String name = "fish_or_bobblehead.pte";
-        try {
-            File program = new File(getFilesDir(), name);   // the runtime wants a file, and assets are not files
-            try (InputStream in = getAssets().open(name); FileOutputStream out = new FileOutputStream(program)) {
-                byte[] chunk = new byte[8192];
-                for (int got; (got = in.read(chunk)) > 0; ) out.write(chunk, 0, got);
-            }
-            Net loaded = new Net(program);
-            double[] check;
-            try (InputStream in = getAssets().open("selftest.bin")) {
-                check = loaded.check(in);
-            }
-            Log.i(Sonar.TAG, String.format(Locale.US, "PyTorch model check: %.0f examples, largest difference from the PC %.6f; runtime backends: %s",
-                    check[0], check[1], Net.backends()));
-            if (check[1] > 0.01) return String.format(Locale.US, "PyTorch model check FAILED: differs from the PC by %.3f.", check[1]);
-            net = loaded;
-            return String.format(Locale.US, "PyTorch model check: %.0f of %.0f examples match the PC.", check[0], check[0]);
-        } catch (Throwable e) {   // a missing native library is an Error, not an Exception
-            Log.e(Sonar.TAG, "no network to guess with", e);
-            return "The PyTorch model could not be loaded.";
         }
     }
 
@@ -190,7 +163,7 @@ public class MainActivity extends Activity implements Sonar.Listener {
                 prompt(u.text + ". This one will be repeated.");
             } else if (step == 0) {
                 scene = u.scene;
-                file(u, "background", "");
+                file(getExternalFilesDir(null), u, "background", "");
                 step = 1;
                 prompt("Saved the background.");
             } else if (u.guess == null) {   // no network: just ask
@@ -239,18 +212,22 @@ public class MainActivity extends Activity implements Sonar.Listener {
             guesses++;
             if (correct) right++;
             news = String.format(Locale.US, "My guess: %s. It was the %s: %s.", guess(u.guess), Classifier.CLASSES[truth], correct ? "RIGHT" : "WRONG");
-            extra = String.format(Locale.US, "\"guess\": \"%s\", \"p_fish\": %.4f, \"guess_right\": %b, \"echo_level_db\": %.1f, \"slides\": [%.2f, %.2f], ",
-                    Classifier.CLASSES[pick(u.guess)], u.guess.p[0], correct, u.guess.level, u.guess.slide[0], u.guess.slide[1]);
+            extra = guessFields(u.guess, truth);
         }
-        file(u, Classifier.CLASSES[truth], extra);
+        file(getExternalFilesDir(null), u, Classifier.CLASSES[truth], extra);
         step = (step + 1) % STEPS.length;
         if (step == 0) done++;
         prompt(news + (step == 0 ? " Set complete: move somewhere else for the next one." : ""));
     }
 
+    /** What the guessing made of a recording, as part of a JSON object. @param truth the class it really was, or -1 if nothing was there */
+    static String guessFields(Judge.Result g, int truth) {
+        return String.format(Locale.US, "\"guess\": \"%s\", \"p_fish\": %.4f, %s\"echo_level_db\": %.1f, \"slides\": [%.2f, %.2f], ",
+                Classifier.CLASSES[pick(g)], g.p[0], truth < 0 ? "" : "\"guess_right\": " + (pick(g) == truth) + ", ", g.level, g.slide[0], g.slide[1]);
+    }
+
     /** Give the recording its final name, now that what was in front is known, and write its settings beside it. */
-    private void file(Sonar.Update u, String label, String extra) {
-        File dir = getExternalFilesDir(null);
+    static void file(File dir, Sonar.Update u, String label, String extra) {
         String name = u.file + "_" + label;
         if (!new File(dir, u.file + ".wav").renameTo(new File(dir, name + ".wav"))) Log.e(Sonar.TAG, "could not rename " + u.file);
         try (PrintWriter pw = new PrintWriter(new File(dir, name + ".json"))) {
