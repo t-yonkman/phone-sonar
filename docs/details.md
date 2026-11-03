@@ -452,8 +452,8 @@ the repository also holds that model retrained on all 26 sets.
 
 ## Limits
 
-What carries over to a search sonar is the processing, not the physics. The differences, most
-important first:
+Only the signal processing here would carry over to a search sonar. The differences, most important
+first:
 
 **The targets are acoustically hard; a body in water is not.** Acoustic impedance, density times
 sound speed, is about 410 rayl for air, 1.5 million for water, and millions for dense solids. In air
