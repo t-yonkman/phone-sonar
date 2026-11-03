@@ -10,7 +10,7 @@ bobblehead.
 ## The trial
 
 - **Setup.** The phone stands on a paper mat marked by distance. The app shuffles the positions and says
-  what to place, so no label is typed, and each recording starts itself so the phone isn't touched.
+  which object to place and where. Recordings begin automatically on a delay so the phone isn't touched.
 - **Each set.** An empty scene, then both objects at one mark, 10 to 20 cm out. Each block of 7 sets has
   an empty trial, and repeats its first mark at the end to check for drift.
 - **Sealed test.** Blocks A to C built the method, always tested on a block it hadn't trained on. Block D
@@ -18,7 +18,7 @@ bobblehead.
 
 ![The fish and the bobblehead on the paper mat at the 20 cm mark](docs/figures/photos_20cm.jpg)
 
-*Both objects at the 20 cm mark, photographed by the phone itself after each recording.*
+*Both objects at the 20 cm mark, photographed by the phone after each recording.*
 
 ## The sealed result
 
@@ -26,7 +26,8 @@ bobblehead.
 |---|---|---|---|
 | Correct object named | 12 of 14 | 14 of 14 | Pass |
 | Distance within 2 cm | 13 of 14 | 11 of 14 | **Missed** |
-| Objects found, empty trial rejected | 13 of 14, rejected | 14 of 14, rejected | Pass |
+| Object detected | 13 of 14 | 14 of 14 | Pass |
+| Empty mat reported as empty | 1 of 1 | 1 of 1 | Pass |
 | Same answer at 2.8 s as at 10 s | 13 of 14 | 14 of 14 | Pass |
 | App matches Python | Same answers, P(fish) gaps of at most 0.05 | Same answers, one gap of 0.0545 | **Missed** |
 
@@ -35,12 +36,12 @@ One read 20.2 cm at the 10 cm mark. The other 11 are within 1.1 cm. The app gave
 miss is one probability gap against a mark set too tight, and it stands. Nothing was retuned afterwards. With
 14 recordings, 14 of 14 only shows accuracy above about 77%.
 
-| Errors | Blocks A to C, each held out | Block D, sealed |
+| Error | Blocks A to C, each held out | Block D, sealed |
 |---|---|---|
-| Objects missed | 1 of 42 | 0 of 14 |
+| Object not detected | 1 of 42 | 0 of 14 |
 | Empty mat taken for an object | 0 of 3 | 0 of 1 |
-| Wrong object named | 0 of 42 | 0 of 14 |
-| Distance within 2 cm | 38 of 42 | 11 of 14 |
+| Incorrect object named | 0 of 42 | 0 of 14 |
+| Distance off by more than 2 cm | 4 of 42 | 3 of 14 |
 
 Trained on blocks A to C alone, it also names 49 of 52 recordings from earlier sets on other days.
 
@@ -48,7 +49,7 @@ Trained on blocks A to C alone, it also names 49 of 52 recordings from earlier s
 
 *Blocks A to C. Left: distance read from the echo, not knowing the object. Right: how loud each echo is.*
 
-## What fooled it
+## Limitations
 
 - **Strength, not shape.** It names the objects mostly by how strongly they reflect. Strength and delay alone
   name 38 of 42, and removing loudness drops the model to 31.
@@ -80,9 +81,9 @@ Trained on blocks A to C alone, it also names 49 of 52 recordings from earlier s
 A nearest class mean on the same input names 41 of 42 and 13 of 14, against the CNN's 42 and 14, so these data
 barely make the case for the network. The model is 48 KB in ExecuTorch, with the signal chain in Java.
 
-## Limits
+## From air to water
 
-What carries over to a search sonar is the processing, not the physics. These are hard objects in air, and nothing
+Only the signal processing here would carry over to a search sonar. These are hard objects in air, and nothing
 here measures a body in water ([why](docs/details.md#limits)). There is no beam, a real search has no empty scene to
 subtract, and it listens while it transmits, which only a separate speaker and mic allow.
 
